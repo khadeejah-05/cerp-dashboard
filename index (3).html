@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CERP Project Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --navy: #0c2f4f;
+    --teal: #1a8a8a;
+    --teal-light: #e6f4f4;
+    --cream: #f7f6f2;
+    --ink: #1c2530;
+    --muted: #5d6b78;
+    --border: #dde3e6;
+    --amber: #c97a2b;
+    --amber-light: #fbf0e3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+  }
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header .brand { display: flex; align-items: baseline; gap: 10px; }
+  header h1 { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: 0.2px; }
+  header .tagline { font-size: 12.5px; color: #a9c4cf; font-style: italic; }
+  header .right { display: flex; align-items: center; gap: 14px; }
+  header .count { font-size: 13px; color: #c9dde2; }
+  .refresh-btn {
+    font-size: 12px;
+    padding: 5px 12px;
+    background: transparent;
+    border: 1px solid #4a7488;
+    color: #cfe6ea;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .refresh-btn:hover { background: rgba(255,255,255,0.08); }
+
+  .banner {
+    padding: 9px 28px;
+    font-size: 12.5px;
+    display: none;
+  }
+  .banner.show { display: block; }
+  .banner-loading { background: var(--teal-light); color: var(--teal); }
+  .banner-error { background: #f6e3e3; color: #a13a3a; }
+
+  .layout { display: grid; grid-template-columns: 280px 1fr; gap: 0; min-height: calc(100vh - 68px); }
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+  .filters {
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  .filters h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--muted); margin: 18px 0 8px;
+    border-bottom: 1px solid var(--border); padding-bottom: 6px;
+  }
+  .filters h2:first-child { margin-top: 0; }
+  .filter-group label {
+    display: flex; align-items: center; gap: 7px; font-size: 13.5px;
+    padding: 4px 2px; cursor: pointer; color: var(--ink);
+  }
+  .filter-group label:hover { color: var(--teal); }
+  .filter-group input[type="checkbox"] { accent-color: var(--teal); width: 14px; height: 14px; cursor: pointer; }
+  .filter-group .badge-count {
+    margin-left: auto; font-size: 11px; color: var(--muted);
+    background: var(--cream); border-radius: 8px; padding: 1px 6px;
+  }
+  .search-box {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border);
+    border-radius: 6px; font-size: 13.5px; margin-bottom: 4px;
+  }
+  .search-box:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  .clear-btn {
+    width: 100%; margin-top: 14px; padding: 8px; background: var(--cream);
+    border: 1px solid var(--border); border-radius: 6px; font-size: 12.5px;
+    color: var(--muted); cursor: pointer;
+  }
+  .clear-btn:hover { background: var(--teal-light); color: var(--teal); }
+
+  .main { padding: 22px 28px 60px; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+  .results-count { font-size: 13.5px; color: var(--muted); }
+  .results-count strong { color: var(--ink); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+
+  .card {
+    background: white; border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .card:hover { box-shadow: 0 4px 14px rgba(12,47,79,0.10); transform: translateY(-1px); }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .card-area-pill {
+    font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.4px;
+    font-weight: 700; padding: 2px 8px; border-radius: 10px; white-space: nowrap;
+  }
+  .pill-Education { background: #e8eef7; color: #2b4a8c; }
+  .pill-Health { background: var(--teal-light); color: var(--teal); }
+  .pill-Miscellaneous { background: #f1e9f7; color: #6b3fa0; }
+  .status-pill { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 10px; white-space: nowrap; }
+  .status-Ongoing { background: #fff4d6; color: #92681a; }
+  .status-Completed { background: #e3f3e6; color: #2c6e3f; }
+  .card h3 { font-size: 15px; margin: 2px 0 0; color: var(--navy); line-height: 1.3; }
+  .card .section-label { font-size: 11.5px; color: var(--teal); font-weight: 600; }
+  .card p.desc { font-size: 13px; color: var(--ink); line-height: 1.5; margin: 4px 0; }
+  .card .partners { font-size: 11.5px; color: var(--muted); font-style: italic; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .tag { font-size: 10.5px; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--border); color: var(--ink); background: var(--cream); }
+  .tag.sl { background: var(--navy); color: white; border-color: var(--navy); }
+  .tag.t2 { background: white; color: var(--teal); border-color: var(--teal); }
+  .tag.t3 { background: white; color: var(--muted); font-style: italic; }
+  .confidence-flag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 5px; margin-top: 6px; width: fit-content; }
+  .confidence-review { background: var(--amber-light); color: var(--amber); }
+  .confidence-untagged { background: #f3eaea; color: #a13a3a; }
+  .confidence-schema-flag { background: #ece4f5; color: #6b3fa0; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .copy-btn {
+    align-self: flex-start; margin-top: 6px; font-size: 11px; padding: 4px 10px;
+    border: 1px solid var(--teal); color: var(--teal); background: white; border-radius: 5px; cursor: pointer;
+  }
+  .copy-btn:hover { background: var(--teal); color: white; }
+  .copy-btn.copied { background: var(--teal); color: white; border-color: var(--teal); }
+
+  .setup-screen {
+    max-width: 640px; margin: 60px auto; background: white; border: 1px solid var(--border);
+    border-radius: 10px; padding: 32px; line-height: 1.6; font-size: 14px;
+  }
+  .setup-screen h2 { color: var(--navy); margin-top: 0; }
+  .setup-screen code { background: var(--cream); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .setup-screen ol { padding-left: 22px; }
+  .setup-screen input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; margin: 8px 0; }
+  .setup-screen button { background: var(--teal); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>CERP Project Dashboard</h1>
+    <span class="tagline">Evidence Matters</span>
+  </div>
+  <div class="right">
+    <span class="count" id="headerCount"></span>
+    <button class="refresh-btn" id="refreshBtn">Refresh data</button>
+  </div>
+</header>
+
+<div class="banner banner-loading" id="loadingBanner">Loading latest data from the Sheet…</div>
+<div class="banner banner-error" id="errorBanner"></div>
+
+<div id="app" style="display:none;">
+  <div class="layout">
+    <aside class="filters">
+      <h2>Search</h2>
+      <input type="text" class="search-box" id="searchBox" placeholder="Search project name or description...">
+      <h2>Thematic Area</h2>
+      <div class="filter-group" id="areaFilters"></div>
+      <h2>Status</h2>
+      <div class="filter-group" id="statusFilters"></div>
+      <h2>Service Line</h2>
+      <div class="filter-group" id="serviceLineFilters"></div>
+      <h2>Method (Tier 2)</h2>
+      <div class="filter-group" id="tier2Filters"></div>
+      <h2>Technique (Tier 3)</h2>
+      <div class="filter-group" id="tier3Filters"></div>
+      <h2>Tagging Confidence</h2>
+      <div class="filter-group" id="confidenceFilters"></div>
+      <button class="clear-btn" id="clearBtn">Clear all filters</button>
+    </aside>
+    <main class="main">
+      <div class="toolbar">
+        <div class="results-count"><strong id="resultsNum">0</strong> projects shown</div>
+      </div>
+      <div class="grid" id="cardGrid"></div>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        No projects match the current filters. Try clearing some filters.
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="setup-screen" id="setupScreen" style="display:none;">
+  <h2>Connect your Google Sheet</h2>
+  <p>This dashboard reads its project list from a published Google Sheet, so anyone on the
+  team can add or edit projects without touching code.</p>
+  <ol>
+    <li>In Google Sheets: <strong>File → Share → Publish to web</strong></li>
+    <li>Choose the correct tab, set format to <strong>Comma-separated values (.csv)</strong>, click Publish</li>
+    <li>Copy the generated link and paste it below</li>
+  </ol>
+  <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv">
+  <button onclick="saveSheetUrl()">Connect</button>
+  <p style="color:#a13a3a; font-size:12.5px; margin-top:14px;" id="setupError"></p>
+</div>
+
+<script>
+const CONFIG_KEY = "cerp_dashboard_sheet_url";
+let SHEET_URL = localStorage.getItem(CONFIG_KEY) || "";
+
+const confidenceLabels = {
+  confirmed: "Confirmed", review: "Needs review", untagged: "Untagged", "schema-flag": "Schema flag"
+};
+
+let PROJECTS = [];
+const state = { search: "", area: new Set(), status: new Set(), serviceLine: new Set(), tier2: new Set(), tier3: new Set(), confidence: new Set() };
+
+function splitMulti(val) {
+  if (!val) return [];
+  return val.split(",").map(s => s.trim()).filter(Boolean);
+}
+
+function loadData() {
+  if (!SHEET_URL) {
+    document.getElementById("setupScreen").style.display = "block";
+    document.getElementById("loadingBanner").classList.remove("show");
+    return;
+  }
+  document.getElementById("loadingBanner").classList.add("show");
+  document.getElementById("errorBanner").classList.remove("show");
+  document.getElementById("setupScreen").style.display = "none";
+
+  Papa.parse(SHEET_URL, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: (results) => {
+      if (!results.data.length) {
+        showError("The Sheet loaded but returned no rows. Check the published tab and URL.");
+        return;
+      }
+      PROJECTS = results.data.map(row => ({
+        id: row.id || row.name,
+        name: row.name || "(untitled)",
+        area: row.area || "",
+        section: row.section || "",
+        description: row.description || "",
+        partners: row.partners || "",
+        status: row.status || "",
+        serviceLine: splitMulti(row.serviceLine),
+        tier2: splitMulti(row.tier2),
+        tier3: splitMulti(row.tier3),
+        confidence: row.confidence || "confirmed"
+      }));
+      document.getElementById("loadingBanner").classList.remove("show");
+      document.getElementById("app").style.display = "block";
+      initFilters();
+      render();
+    },
+    error: (err) => {
+      showError("Could not load the Sheet. Check that it's published to the web as CSV. (" + err + ")");
+    }
+  });
+}
+
+function showError(msg) {
+  document.getElementById("loadingBanner").classList.remove("show");
+  const eb = document.getElementById("errorBanner");
+  eb.textContent = msg;
+  eb.classList.add("show");
+}
+
+function saveSheetUrl() {
+  const val = document.getElementById("sheetUrlInput").value.trim();
+  if (!val.startsWith("http")) {
+    document.getElementById("setupError").textContent = "That doesn't look like a URL. Paste the full published CSV link.";
+    return;
+  }
+  localStorage.setItem(CONFIG_KEY, val);
+  SHEET_URL = val;
+  loadData();
+}
+
+document.getElementById("refreshBtn").addEventListener("click", loadData);
+
+function unique(field) {
+  const s = new Set();
+  PROJECTS.forEach(p => {
+    const v = p[field];
+    if (Array.isArray(v)) v.forEach(x => x && s.add(x));
+    else if (v) s.add(v);
+  });
+  return [...s].sort();
+}
+function countFor(field, value) {
+  return PROJECTS.filter(p => {
+    const v = p[field];
+    return Array.isArray(v) ? v.includes(value) : v === value;
+  }).length;
+}
+function buildFilterGroup(containerId, field, options) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  options.forEach(opt => {
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = opt;
+    cb.addEventListener("change", () => {
+      if (cb.checked) state[field].add(opt); else state[field].delete(opt);
+      render();
+    });
+    const span = document.createElement("span");
+    span.textContent = field === "confidence" ? (confidenceLabels[opt] || opt) : opt;
+    const count = document.createElement("span");
+    count.className = "badge-count";
+    count.textContent = countFor(field, opt);
+    label.appendChild(cb); label.appendChild(span); label.appendChild(count);
+    container.appendChild(label);
+  });
+}
+function initFilters() {
+  buildFilterGroup("areaFilters", "area", unique("area"));
+  buildFilterGroup("statusFilters", "status", unique("status"));
+  buildFilterGroup("serviceLineFilters", "serviceLine", unique("serviceLine"));
+  buildFilterGroup("tier2Filters", "tier2", unique("tier2"));
+  buildFilterGroup("tier3Filters", "tier3", unique("tier3"));
+  buildFilterGroup("confidenceFilters", "confidence", unique("confidence"));
+}
+function matchesFilters(p) {
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    const hay = (p.name + " " + p.description + " " + p.partners + " " + p.section).toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  if (state.area.size && !state.area.has(p.area)) return false;
+  if (state.status.size && !state.status.has(p.status)) return false;
+  if (state.serviceLine.size && !p.serviceLine.some(s => state.serviceLine.has(s))) return false;
+  if (state.tier2.size && !p.tier2.some(s => state.tier2.has(s))) return false;
+  if (state.tier3.size && !p.tier3.some(s => state.tier3.has(s))) return false;
+  if (state.confidence.size && !state.confidence.has(p.confidence)) return false;
+  return true;
+}
+function cardHTML(p) {
+  const slTags = p.serviceLine.map(s => `<span class="tag sl">${s}</span>`).join("");
+  const t2Tags = p.tier2.map(s => `<span class="tag t2">${s}</span>`).join("");
+  const t3Tags = p.tier3.map(s => `<span class="tag t3">${s}</span>`).join("");
+  const confBadge = p.confidence && p.confidence !== "confirmed"
+    ? `<div class="confidence-flag confidence-${p.confidence}">${confidenceLabels[p.confidence] || p.confidence}</div>` : "";
+  return `
+    <div class="card" data-id="${p.id}">
+      <div class="card-top">
+        <span class="card-area-pill pill-${p.area}">${p.area}</span>
+        <span class="status-pill status-${p.status}">${p.status}</span>
+      </div>
+      <h3>${p.name}</h3>
+      <div class="section-label">${p.section}</div>
+      <p class="desc">${p.description}</p>
+      <div class="partners">${p.partners}</div>
+      <div class="tag-row">${slTags}${t2Tags}${t3Tags}</div>
+      ${confBadge}
+      <button class="copy-btn" data-id="${p.id}">Copy card text</button>
+    </div>`;
+}
+function render() {
+  const filtered = PROJECTS.filter(matchesFilters);
+  const grid = document.getElementById("cardGrid");
+  const empty = document.getElementById("emptyState");
+  document.getElementById("resultsNum").textContent = filtered.length;
+  document.getElementById("headerCount").textContent = `${PROJECTS.length} total projects`;
+  if (filtered.length === 0) { grid.innerHTML = ""; empty.style.display = "block"; }
+  else { empty.style.display = "none"; grid.innerHTML = filtered.map(cardHTML).join(""); }
+  document.querySelectorAll(".copy-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const p = PROJECTS.find(x => x.id === btn.dataset.id);
+      const text = `${p.name}\n${p.partners}\n\n${p.description}`;
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "Copied"; btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy card text"; btn.classList.remove("copied"); }, 1400);
+      });
+    });
+  });
+}
+document.getElementById("searchBox").addEventListener("input", (e) => { state.search = e.target.value; render(); });
+document.getElementById("clearBtn").addEventListener("click", () => {
+  state.search = ""; document.getElementById("searchBox").value = "";
+  ["area","status","serviceLine","tier2","tier3","confidence"].forEach(f => state[f].clear());
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  render();
+});
+
+loadData();
+</script>
+</body>
+</html>
