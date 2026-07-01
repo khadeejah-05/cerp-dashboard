@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CERP Project Dashboard</title>
+<style>
+  :root {
+    --navy: #13577e;
+    --teal: #069ba1;
+    --teal-light: #e1f3f3;
+    --cream: #f7f6f2;
+    --ink: #1c2530;
+    --muted: #5d6b78;
+    --border: #dde3e6;
+    --amber: #c97a2b;
+    --amber-light: #fbf0e3;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+  }
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  header h1 {
+    font-size: 20px;
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+  }
+  header .tagline {
+    font-size: 12.5px;
+    color: #a9c4cf;
+    font-style: italic;
+  }
+  header .count {
+    font-size: 13px;
+    color: #c9dde2;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 68px);
+  }
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .filters {
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  .filters h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    margin: 18px 0 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .filters h2:first-child { margin-top: 0; }
+  .mode-toggle {
+    display: inline-flex;
+    float: right;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    text-transform: none;
+    letter-spacing: normal;
+  }
+  .mode-toggle button {
+    border: none;
+    background: white;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .mode-toggle button.active {
+    background: var(--teal);
+    color: white;
+  }
+  .filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+    padding: 4px 2px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .filter-group label:hover { color: var(--teal); }
+  .filter-group input[type="checkbox"] {
+    accent-color: var(--teal);
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+  }
+  .filter-group .badge-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--cream);
+    border-radius: 8px;
+    padding: 1px 6px;
+  }
+  .search-box {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13.5px;
+    margin-bottom: 4px;
+  }
+  .search-box:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  .clear-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 8px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .clear-btn:hover { background: var(--teal-light); color: var(--teal); }
+
+  /* ---------- Hierarchical "Study Design" filter tree ---------- */
+  .design-tree-group {
+    margin-bottom: 10px;
+  }
+  .design-tree-group .group-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin: 10px 0 2px;
+    padding: 0 2px;
+  }
+  .design-tree-group .group-label:first-child { margin-top: 0; }
+  .filter-group label.indent {
+    padding-left: 18px;
+    position: relative;
+  }
+  .filter-group label.indent::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    width: 7px;
+    height: 1px;
+    background: var(--border);
+  }
+  .filter-group label.leaf {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .main {
+    padding: 22px 28px 60px;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .results-count {
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .results-count strong { color: var(--ink); }
+  .view-toggle {
+    display: flex;
+    gap: 6px;
+    font-size: 12.5px;
+  }
+  .view-toggle button {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .view-toggle button.active {
+    background: var(--teal);
+    color: white;
+    border-color: var(--teal);
+  }
+  .export-btn {
+    padding: 7px 14px;
+    border: 1px solid var(--navy);
+    background: var(--navy);
+    color: white;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .export-btn:hover { background: #0d4564; }
+  .export-btn.copied { background: #2c6e3f; border-color: #2c6e3f; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .card { cursor: pointer; }
+  .card:hover {
+    box-shadow: 0 4px 14px rgba(12,47,79,0.10);
+    transform: translateY(-1px);
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card-area-pill {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .pill-Education { background: #e8eef7; color: #2b4a8c; }
+  .pill-Health { background: var(--teal-light); color: var(--teal); }
+  .pill-Gender---Inclusion { background: #f1e9f7; color: #6b3fa0; }
+  .pill-Climate---Environment { background: #e6f0e8; color: #2f7a4f; }
+  .pill-Governance { background: #fdeeea; color: #b5482f; }
+  .pill-Social-Protection { background: #fef3e0; color: #a87311; }
+  .pill-Economic-Opportunity { background: #e9f1fb; color: #1f5fa3; }
+
+  .theme-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .status-pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  .status-Ongoing { background: #fff4d6; color: #92681a; }
+  .status-Completed { background: #e3f3e6; color: #2c6e3f; }
+
+  .card h3 {
+    font-size: 15px;
+    margin: 2px 0 0;
+    color: var(--navy);
+    line-height: 1.3;
+  }
+  .card .subtheme-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .subtheme-tag {
+    font-size: 11px;
+    color: var(--teal);
+    font-weight: 600;
+    background: var(--teal-light);
+    padding: 1px 7px;
+    border-radius: 8px;
+  }
+  .card p.desc {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+    margin: 4px 0;
+  }
+  .card .partners {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .tag {
+    font-size: 10.5px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    background: var(--cream);
+  }
+  .tag.evaltype { background: white; color: var(--amber); border-color: var(--amber); font-weight: 600; }
+  /* Services and Study Design are intentionally styled identically (plain
+     white tag, no color coding) so neither dimension visually competes
+     with the other on a card. */
+  .tag.services, .tag.design { background: white; color: var(--ink); border-color: var(--border); }
+  .tag.vertical { background: #f1e9f7; color: #6b3fa0; border-color: #6b3fa0; font-weight: 600; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .copy-btn {
+    align-self: flex-start;
+    margin-top: 6px;
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .copy-btn:hover { background: var(--teal); color: white; }
+  .copy-btn.copied { background: var(--teal); color: white; border-color: var(--teal); }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: center;
+  }
+  .details-btn {
+    font-size: 11px;
+    padding: 4px 10px;
+    border: 1px solid var(--navy);
+    color: var(--navy);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .details-btn:hover { background: var(--navy); color: white; }
+
+  /* ---------- Project detail page ---------- */
+  .detail-page {
+    padding: 22px 28px 60px;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--teal);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .back-link:hover { text-decoration: underline; }
+  .detail-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+  }
+  .detail-head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .detail-card h1 {
+    font-size: 22px;
+    color: var(--navy);
+    margin: 10px 0 4px;
+    line-height: 1.3;
+  }
+  .detail-card .partners {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 18px;
+  }
+  .detail-section {
+    margin-top: 22px;
+  }
+  .detail-section h2 {
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin: 0 0 10px;
+  }
+  .detail-section p {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin: 0;
+  }
+  .detail-tag-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .detail-tag-block .tag, .detail-tag-block .subtheme-tag, .detail-tag-block .card-area-pill {
+    font-size: 11.5px;
+  }
+  .resource-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .resource-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--cream);
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .resource-item:hover {
+    border-color: var(--teal);
+    background: var(--teal-light);
+  }
+  .resource-icon {
+    font-size: 16px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .resource-item .resource-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .resource-empty {
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--cream);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    line-height: 1.55;
+  }
+  .resource-empty code {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 12px;
+  }
+
+  /* ---------- About button + data banner ---------- */
+  .about-btn {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white;
+    font-size: 12.5px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .about-btn:hover { background: rgba(255,255,255,0.22); }
+
+  .data-banner {
+    padding: 9px 28px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-banner.loading { background: var(--teal-light); color: var(--navy); }
+  .data-banner.error { background: var(--amber-light); color: #8a3b1f; }
+
+  .skeleton-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    height: 190px;
+  }
+  .skeleton-line {
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--border) 25%, #eef1f2 37%, var(--border) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+  /* ---------- About modal ---------- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,30,38,0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 100;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal-card {
+    background: var(--cream);
+    border-radius: 14px;
+    max-width: 760px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(10,30,45,0.35);
+  }
+  .modal-head {
+    background: var(--navy);
+    color: white;
+    padding: 18px 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .modal-head h2 {
+    margin: 0;
+    font-size: 17px;
+  }
+  .modal-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.3); }
+  .modal-body { padding: 22px 26px 30px; }
+  .modal-body p.lead {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-top: 0;
+  }
+  .modal-section {
+    margin-top: 22px;
+  }
+  .modal-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--navy);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin: 0 0 12px;
+  }
+  .breakdown-theme {
+    margin-bottom: 14px;
+  }
+  .breakdown-theme-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .breakdown-theme-head .count-note {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .breakdown-subs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-left: 2px;
+  }
+  .sub-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    background: white;
+    border: 1px solid var(--border);
+    padding: 3px 9px;
+    border-radius: 7px;
+    color: var(--ink);
+  }
+  .sub-chip .also-in {
+    font-size: 9.5px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .glossary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .glossary-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .glossary-item .term-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .glossary-item .term-name {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--navy);
+  }
+  .glossary-item .term-meta {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .glossary-item .term-used-in {
+    font-size: 11.5px;
+    color: var(--teal);
+    margin-top: 4px;
+  }
+  .modal-note {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--teal-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>CERP Project Dashboard</h1>
+    <span class="tagline">Evidence Matters</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:14px;">
+    <button class="about-btn" id="aboutBtn" type="button">About this dashboard</button>
+    <div class="count" id="headerCount"></div>
+  </div>
+</header>
+
+<div class="data-banner" id="dataBanner" style="display:none;"></div>
+
+<div class="layout" id="listLayout">
+  <aside class="filters">
+    <h2>Search</h2>
+    <input type="text" class="search-box" id="searchBox" placeholder="Search project name or description...">
+
+    <h2 id="themeHeading">Theme</h2>
+    <div class="filter-group" id="themeFilters"></div>
+
+    <h2 id="subthemeHeading">Sub-theme</h2>
+    <div class="filter-group" id="subthemeFilters"></div>
+
+    <h2>Status</h2>
+    <div class="filter-group" id="statusFilters"></div>
+
+    <h2 id="evaluationTypeHeading">Evaluation</h2>
+    <div class="filter-group" id="evalTypeFilters"></div>
+
+    <h2 id="studyDesignHeading">Study Design</h2>
+    <div class="filter-group" id="studyDesignFilters"></div>
+
+    <h2 id="servicesHeading">Services</h2>
+    <div class="filter-group" id="servicesFilters"></div>
+
+    <h2 id="verticalsHeading">Verticals</h2>
+    <div class="filter-group" id="verticalsFilters"></div>
+
+    <button class="clear-btn" id="clearBtn">Clear all filters</button>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <div class="results-count"><strong id="resultsNum">0</strong> projects shown</div>
+      <button class="export-btn" id="exportBtn" type="button">Export results to table</button>
+    </div>
+    <div class="grid" id="cardGrid"></div>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      No projects match the current filters. Try clearing some filters.
+    </div>
+  </main>
+</div>
+
+<div class="detail-page" id="detailPage" style="display:none;"></div>
+
+<div class="modal-overlay" id="aboutModal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2>About this dashboard</h2>
+      <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- filled in by JS -->
+    </div>
+  </div>
+</div>
+
+<script src="sheet-loader.js"></script>
+<script>
+document.getElementById("aboutBtn").addEventListener("click", () => {
+  document.getElementById("aboutModal").hidden = false;
+});
+document.getElementById("modalCloseBtn").addEventListener("click", () => {
+  document.getElementById("aboutModal").hidden = true;
+});
+document.getElementById("aboutModal").addEventListener("click", (e) => {
+  if (e.target.id === "aboutModal") document.getElementById("aboutModal").hidden = true;
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") document.getElementById("aboutModal").hidden = true;
+});
+
+const EVAL_TYPE_DESC = {
+  "Process Evaluation": "Looks at how a program was implemented — fidelity, adoption, bottlenecks — rather than whether it changed outcomes.",
+  "Impact Evaluation": "Measures whether a program caused a change in outcomes, usually by comparing a treatment group to a control or comparison group.",
+  "Monitoring, Evaluation, and Learning (MLE)": "Ongoing tracking of a program paired with structured learning loops, typically running alongside delivery rather than as a one-off study."
+};
+const SERVICES_DESC = {
+  "Monitoring only": "Ongoing tracking of program activities or indicators, without a paired evaluation component.",
+  "Evaluation only": "A standalone evaluation engagement, with no ongoing monitoring component attached.",
+  "Process evaluation": "Looks at how a program was implemented — fidelity, adoption, bottlenecks — rather than whether it changed outcomes. Falls under Evaluation only.",
+  "Impact evaluation": "Measures whether a program caused a change in outcomes, usually by comparing a treatment group to a control or comparison group. Falls under Evaluation only.",
+  "Monitoring and evaluations": "Combines ongoing monitoring with a discrete evaluation component, short of a full MLE engagement.",
+  "MLE (Monitoring, Learning, and Evaluations)": "An ongoing engagement combining monitoring, structured learning loops, and evaluation, typically running alongside delivery."
+};
+const STUDY_DESIGN_DESC = {
+  "RCT": "Randomized Controlled Trial — participants are randomly assigned to treatment or control to isolate causal impact. Falls under Causal Impact.",
+  "Stepped Wedge": "A type of RCT where all participants eventually receive the intervention, but the order of rollout is randomized. Falls under Causal Impact → RCT.",
+  "Quasi-Experimental": "Compares treatment and comparison groups that weren't randomly assigned, using statistical techniques to approximate a controlled comparison. Falls under Causal Impact.",
+  "Difference-in-Difference (DiD)": "A quasi-experimental technique comparing the change over time in an outcome between a treated and untreated group. Falls under Causal Impact → Quasi-Experimental.",
+  "Pre-Post / Before-After (no comparison group)": "Compares the same group's outcomes before and after an intervention, without a separate comparison group. Falls under Causal Impact.",
+  "Cross-Sectional": "Captures data at a single point in time across a population or sample. Falls under Descriptive / Observational.",
+  "Longitudinal": "Follows the same people, households, or units repeatedly over time to track change. Falls under Descriptive / Observational.",
+  "Qualitative": "Interviews, focus groups, or observation aimed at understanding context, mechanisms, or lived experience. A standalone design, often paired with other methods."
+};
+
+function buildParentMap(parentField, childField) {
+  // returns { childValue: Set(parentValues) }
+  const m = {};
+  PROJECTS.forEach(p => {
+    (p[childField] || []).forEach(child => {
+      if (!child) return;
+      if (!m[child]) m[child] = new Set();
+      (p[parentField] || []).forEach(parent => m[child].add(parent));
+    });
+  });
+  return m;
+}
+
+function countProjectsFor(field, value) {
+  return PROJECTS.filter(p => (p[field] || []).includes(value)).length;
+}
+
+function buildThemeBreakdown() {
+  const subToThemes = buildParentMap("theme", "subtheme");
+  const themes = unique("theme");
+
+  // Decide one "primary" theme per subtheme: whichever theme has the most
+  // projects carrying that subtheme (ties broken by alphabetical theme name
+  // for stability). This is what "most associated with" means in practice.
+  const primaryThemeForSub = {};
+  Object.keys(subToThemes).forEach(sub => {
+    const candidates = [...subToThemes[sub]];
+    let best = null, bestCount = -1;
+    candidates.sort().forEach(theme => {
+      const count = PROJECTS.filter(p => p.theme.includes(theme) && p.subtheme.includes(sub)).length;
+      if (count > bestCount) { bestCount = count; best = theme; }
+    });
+    primaryThemeForSub[sub] = best;
+  });
+
+  let html = "";
+  themes.forEach(theme => {
+    const subsHere = [...new Set(
+      PROJECTS.filter(p => p.theme.includes(theme)).flatMap(p => p.subtheme)
+    )]
+      .filter(sub => primaryThemeForSub[sub] === theme) // only render where this IS the primary owner
+      .sort();
+
+    const projCount = countProjectsFor("theme", theme);
+    html += `<div class="breakdown-theme">
+      <div class="breakdown-theme-head">
+        <span class="card-area-pill pill-${theme.replace(/ & /g," ").replace(/ /g,"-")}">${theme}</span>
+        <span class="count-note">${projCount} project${projCount === 1 ? "" : "s"}</span>
+      </div>`;
+
+    if (subsHere.length) {
+      html += `<div class="breakdown-subs">`;
+      subsHere.forEach(sub => {
+        const allOtherParents = [...subToThemes[sub]].filter(t => t !== theme);
+        const alsoIn = allOtherParents.length
+          ? `<span class="also-in">also: ${allOtherParents.join(", ")}</span>`
+          : "";
+        html += `<span class="sub-chip">${sub}${alsoIn}</span>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<div class="breakdown-subs"><span class="count-note">No sub-themes tagged yet</span></div>`;
+    }
+    html += `</div>`;
+  });
+  return html;
+}
+
+function buildGlossarySection(values, descMap, field, parentField, parentLabel) {
+  const parentMap = parentField ? buildParentMap(parentField, field) : null;
+  let html = `<div class="glossary-list">`;
+  values.forEach(val => {
+    const count = countProjectsFor(field, val);
+    const desc = descMap[val] || "No description on file yet.";
+    let usedIn = "";
+    if (parentMap && parentMap[val]) {
+      usedIn = `<div class="term-used-in">Used under: ${[...parentMap[val]].join(", ")}</div>`;
+    }
+    html += `<div class="glossary-item">
+      <div class="term-row">
+        <span class="term-name">${val}</span>
+        <span class="term-meta">${count} project${count === 1 ? "" : "s"}</span>
+      </div>
+      <p style="margin:6px 0 0; font-size:12.5px; color:var(--ink); line-height:1.5;">${desc}</p>
+      ${usedIn}
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function buildAboutModalContent() {
+  const body = document.getElementById("modalBody");
+
+  const themeHTML = buildThemeBreakdown();
+  const evalHTML = buildGlossarySection(unique("evaluationType"), EVAL_TYPE_DESC, "evaluationType", null, null);
+  const designHTML = buildGlossarySection(unique("studyDesign"), STUDY_DESIGN_DESC, "studyDesign", null, null);
+  const servicesHTML = buildGlossarySection(unique("services"), SERVICES_DESC, "services", null, null);
+
+  body.innerHTML = `
+    <p class="lead">This dashboard catalogs CERP's project portfolio. Every project is tagged along several independent dimensions: a <strong>subject-matter breakdown</strong> (Theme → Sub-theme), an <strong>evaluation breakdown</strong> (Evaluation type and Study Design), and a <strong>Services</strong> breakdown (Monitoring only, Evaluation only, Monitoring and evaluations, or MLE). A project can carry more than one tag in each dimension, so some sub-themes show up under more than one parent — those are listed once with a note on where else they appear, rather than repeated.</p>
+
+    <div class="modal-section">
+      <h3>Theme → Sub-theme</h3>
+      ${themeHTML}
+      <div class="modal-note">Sub-themes that apply to more than one theme are shown once, under the theme they're most associated with, with their other themes noted alongside.</div>
+    </div>
+
+    <div class="modal-section">
+      <h3>Evaluation Type</h3>
+      ${evalHTML}
+      <div class="modal-note">Not every project is an evaluation — market assessments, landscaping studies, and tool/platform builds are tagged with a Study Design where relevant but may carry no Evaluation type at all.</div>
+    </div>
+
+    <div class="modal-section">
+      <h3>Study Design</h3>
+      ${designHTML}
+      <div class="modal-note">Study Design groups into three families: <strong>Causal Impact</strong> (RCT — including Stepped Wedge — Quasi-Experimental — including Difference-in-Difference — and Pre-Post/Before-After), <strong>Descriptive/Observational</strong> (Cross-Sectional and Longitudinal), and <strong>Qualitative</strong> as its own family, often combined with the other two on mixed-methods projects. A project can carry more than one if it combines designs.</div>
+    </div>
+
+    <div class="modal-section">
+      <h3>Services</h3>
+      ${servicesHTML}
+      <div class="modal-note">Services groups into Monitoring only, Evaluation only (with Process evaluation and Impact evaluation as sub-types), Monitoring and evaluations, and MLE. A project can carry more than one if it combines services over its lifetime.</div>
+    </div>
+  `;
+}
+</script>
+<script>
+let PROJECTS = [];
+let lastFiltered = [];
+
+const state = {
+  search: "",
+  theme: new Set(),
+  subtheme: new Set(),
+  status: new Set(),
+  evaluationType: new Set(),
+  studyDesign: new Set(),
+  services: new Set(),
+  verticals: new Set()
+};
+
+// All filter fields that "Clear all filters" should reset
+const FILTER_FIELDS = ["theme","subtheme","status","evaluationType","studyDesign","services","verticals"];
+
+// Fields where the user can choose between "match ANY selected tag" (OR,
+// the historical default) and "match ALL selected tags" (AND). Status is
+// left out because a project only ever carries one status value, so AND
+// vs OR is meaningless there — every other multi-value field gets both.
+const AND_OR_FIELDS = ["theme","subtheme","evaluationType","studyDesign","services","verticals"];
+
+// "any" = OR (project matches if it has at least one selected tag)
+// "all" = AND (project matches only if it has every selected tag)
+const filterMode = {};
+AND_OR_FIELDS.forEach(f => filterMode[f] = "any");
+
+// Verticals is a fixed, curated list (not derived from the data) so all
+// seven show up as filter options even before every project is tagged.
+const VERTICALS_OPTIONS = [
+  "Data Analytics", "Labs", "Survey", "Learning Hub",
+  "Policy Advisory", "Research", "Strategic Comms"
+];
+
+// Study Design has three families: two fixed two-branch hierarchies
+// (Causal Impact, Descriptive / Observational) plus Qualitative as its
+// own third heading, rather than a headless leaf — this keeps every
+// checkbox grouped under a visible category instead of leaving one
+// orphaned at the bottom. We render it as a tree in the sidebar instead
+// of a flat alphabetical list, but it filters exactly like any other
+// multi-value field (a project just needs a selected design tag in its
+// studyDesign array to match, per the Any/All toggle above the section).
+const STUDY_DESIGN_TREE = [
+  {
+    group: "Causal Impact",
+    children: [
+      { label: "RCT", children: ["Stepped Wedge"] },
+      { label: "Quasi-Experimental", children: ["Difference-in-Difference (DiD)"] },
+      { label: "Pre-Post / Before-After (no comparison group)", children: [] }
+    ]
+  },
+  {
+    group: "Descriptive / Observational",
+    children: [
+      { label: "Cross-Sectional", children: [] },
+      { label: "Longitudinal", children: [] }
+    ]
+  },
+  {
+    group: "Qualitative",
+    children: [
+      { label: "Qualitative", children: [] }
+    ]
+  }
+];
+
+// Services has a single flat group with one nested pair (Evaluation only ->
+// Process evaluation / Impact evaluation). Rendered with the same tree
+// widget as Study Design, and filters the same way: a project matches if
+// it carries ANY of the selected values in its `services` array.
+const SERVICES_TREE = [
+  {
+    group: null,
+    children: [
+      { label: "Monitoring only", children: [] },
+      { label: "Evaluation only", children: ["Process evaluation", "Impact evaluation"] },
+      { label: "Monitoring and evaluations", children: [] },
+      { label: "MLE (Monitoring, Learning, and Evaluations)", children: [] }
+    ]
+  }
+];
+
+function showSkeleton() {
+  const grid = document.getElementById("cardGrid");
+  const empty = document.getElementById("emptyState");
+  empty.style.display = "none";
+  let html = "";
+  for (let i = 0; i < 6; i++) {
+    html += `
+      <div class="skeleton-card">
+        <div class="skeleton-line" style="width:40%"></div>
+        <div class="skeleton-line" style="width:80%"></div>
+        <div class="skeleton-line" style="width:95%"></div>
+        <div class="skeleton-line" style="width:90%"></div>
+        <div class="skeleton-line" style="width:60%"></div>
+      </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function showBanner(type, message) {
+  const banner = document.getElementById("dataBanner");
+  banner.className = "data-banner " + type;
+  banner.textContent = message;
+  banner.style.display = "block";
+}
+
+function hideBanner() {
+  document.getElementById("dataBanner").style.display = "none";
+}
+
+function initDashboard() {
+  buildFilterGroup("themeFilters", "theme", unique("theme"));
+  buildFilterGroup("subthemeFilters", "subtheme", unique("subtheme"));
+  buildFilterGroup("statusFilters", "status", unique("status"));
+  buildFilterGroup("evalTypeFilters", "evaluationType", unique("evaluationType"));
+  buildTreeFilter("studyDesignFilters", "studyDesign", STUDY_DESIGN_TREE);
+  buildTreeFilter("servicesFilters", "services", SERVICES_TREE);
+  buildFilterGroup("verticalsFilters", "verticals", VERTICALS_OPTIONS);
+  buildModeToggles();
+  render();
+  buildAboutModalContent();
+  handleRoute();
+}
+
+showSkeleton();
+showBanner("loading", "Loading the latest projects from the Google Sheet…");
+loadProjectsFromSheet(
+  (projects) => {
+    PROJECTS = projects;
+    hideBanner();
+    initDashboard();
+  },
+  (err) => {
+    showBanner("error", "Couldn't load live data (" + err.message + "). Showing nothing until this is fixed — check sheet-loader.js.");
+    PROJECTS = [];
+    document.getElementById("cardGrid").innerHTML = "";
+    document.getElementById("resultsNum").textContent = "0";
+    initDashboard();
+  }
+);
+
+
+function pillClass(value) {
+  // Convert "Gender & Inclusion" -> "Gender---Inclusion", "Climate & Environment" -> "Climate---Environment", "Economic Opportunity" -> "Economic-Opportunity"
+  return value.replace(/ & /g, "---").replace(/ /g, "-");
+}
+
+function unique(field) {
+  const s = new Set();
+  PROJECTS.forEach(p => {
+    const v = p[field];
+    if (Array.isArray(v)) v.forEach(x => x && s.add(x));
+    else if (v) s.add(v);
+  });
+  return [...s].sort();
+}
+
+function countFor(field, value) {
+  return PROJECTS.filter(p => {
+    const v = p[field];
+    return Array.isArray(v) ? v.includes(value) : v === value;
+  }).length;
+}
+
+function buildFilterGroup(containerId, field, options) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  options.forEach(opt => {
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = opt;
+    cb.addEventListener("change", () => {
+      if (cb.checked) state[field].add(opt);
+      else state[field].delete(opt);
+      render();
+    });
+    const span = document.createElement("span");
+    span.textContent = opt;
+    const count = document.createElement("span");
+    count.className = "badge-count";
+    count.textContent = countFor(field, opt);
+    label.appendChild(cb);
+    label.appendChild(span);
+    label.appendChild(count);
+    container.appendChild(label);
+  });
+}
+
+// Renders a small "Any / All" switch next to a filter section's heading.
+// "Any" (OR, the default) shows a project if it has at least one of the
+// checked tags in that field. "All" (AND) shows a project only if it has
+// every checked tag in that field. Toggling doesn't touch the checkboxes
+// themselves — just how they're combined — so re-render is all that's needed.
+const HEADING_IDS = {
+  theme: "themeHeading",
+  subtheme: "subthemeHeading",
+  evaluationType: "evaluationTypeHeading",
+  studyDesign: "studyDesignHeading",
+  services: "servicesHeading",
+  verticals: "verticalsHeading"
+};
+
+function buildModeToggles() {
+  AND_OR_FIELDS.forEach(field => {
+    const heading = document.getElementById(HEADING_IDS[field]);
+    if (!heading) return;
+    heading.querySelectorAll(".mode-toggle").forEach(el => el.remove());
+
+    const toggle = document.createElement("span");
+    toggle.className = "mode-toggle";
+
+    const anyBtn = document.createElement("button");
+    anyBtn.type = "button";
+    anyBtn.textContent = "Any";
+    const allBtn = document.createElement("button");
+    allBtn.type = "button";
+    allBtn.textContent = "All";
+
+    function refresh() {
+      anyBtn.classList.toggle("active", filterMode[field] === "any");
+      allBtn.classList.toggle("active", filterMode[field] === "all");
+    }
+    anyBtn.addEventListener("click", () => { filterMode[field] = "any"; refresh(); render(); });
+    allBtn.addEventListener("click", () => { filterMode[field] = "all"; refresh(); render(); });
+    refresh();
+
+    toggle.appendChild(anyBtn);
+    toggle.appendChild(allBtn);
+    heading.appendChild(toggle);
+  });
+}
+
+
+// nested checkboxes. Only leaf values are real filter tags; group headers
+// are visual grouping only and don't filter anything themselves. A project
+// matches if it has ANY selected value in its array for that field.
+function buildTreeFilter(containerId, field, tree) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+
+  function makeCheckbox(value, indentLevel) {
+    const label = document.createElement("label");
+    label.className = "leaf" + (indentLevel > 0 ? " indent" : "");
+    if (indentLevel > 1) label.style.paddingLeft = (18 * indentLevel) + "px";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = value;
+    cb.checked = state[field].has(value);
+    cb.addEventListener("change", () => {
+      if (cb.checked) state[field].add(value);
+      else state[field].delete(value);
+      render();
+    });
+    const span = document.createElement("span");
+    span.textContent = value;
+    const count = document.createElement("span");
+    count.className = "badge-count";
+    count.textContent = countFor(field, value);
+    label.appendChild(cb);
+    label.appendChild(span);
+    label.appendChild(count);
+    return label;
+  }
+
+  tree.forEach(branch => {
+    const wrap = document.createElement("div");
+    wrap.className = "design-tree-group";
+    if (branch.group) {
+      const heading = document.createElement("div");
+      heading.className = "group-label";
+      heading.textContent = branch.group;
+      wrap.appendChild(heading);
+    }
+    branch.children.forEach(child => {
+      wrap.appendChild(makeCheckbox(child.label, branch.group ? 1 : 0));
+      (child.children || []).forEach(grandchild => {
+        wrap.appendChild(makeCheckbox(grandchild, 2));
+      });
+    });
+    container.appendChild(wrap);
+  });
+}
+
+function fieldMatches(projectValues, selected, field) {
+  if (!selected.size) return true;
+  if (filterMode[field] === "all") {
+    // AND: project must carry every selected tag
+    for (const tag of selected) {
+      if (!projectValues.includes(tag)) return false;
+    }
+    return true;
+  }
+  // OR (default): project must carry at least one selected tag
+  return projectValues.some(v => selected.has(v));
+}
+
+function matchesFilters(p) {
+  if (state.search) {
+    const q = state.search.toLowerCase();
+    const hay = (p.name + " " + p.description + " " + p.partners + " " + p.subtheme.join(" ")).toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  if (!fieldMatches(p.theme, state.theme, "theme")) return false;
+  if (!fieldMatches(p.subtheme, state.subtheme, "subtheme")) return false;
+  if (state.status.size && !state.status.has(p.status)) return false;
+  if (!fieldMatches(p.evaluationType, state.evaluationType, "evaluationType")) return false;
+  if (!fieldMatches(p.studyDesign, state.studyDesign, "studyDesign")) return false;
+  if (!fieldMatches(p.services, state.services, "services")) return false;
+  if (!fieldMatches(p.verticals, state.verticals, "verticals")) return false;
+  return true;
+}
+
+function cardHTML(p) {
+  const themePills = p.theme.map(t => `<span class="card-area-pill pill-${pillClass(t)}">${t}</span>`).join("");
+  const subthemeTags = p.subtheme.map(s => `<span class="subtheme-tag">${s}</span>`).join("");
+  const evalTags = p.evaluationType.map(s => `<span class="tag evaltype">${s}</span>`).join("");
+  const designTags = p.studyDesign.map(s => `<span class="tag design">${s}</span>`).join("");
+  const servicesTags = p.services.map(s => `<span class="tag services">${s}</span>`).join("");
+  const verticalsTags = p.verticals.map(s => `<span class="tag vertical">${s}</span>`).join("");
+  return `
+    <div class="card" data-id="${p.id}">
+      <div class="card-top">
+        <div class="theme-row">${themePills}</div>
+        <span class="status-pill status-${p.status}">${p.status}</span>
+      </div>
+      <h3>${p.name}</h3>
+      <div class="subtheme-row">${subthemeTags}</div>
+      <p class="desc">${p.description}</p>
+      <div class="partners">${p.partners}</div>
+      <div class="tag-row">${evalTags}${designTags}${servicesTags}${verticalsTags}</div>
+      <div class="card-actions">
+        <a class="details-btn" href="#/project/${p.id}" data-id="${p.id}">View details &amp; resources</a>
+        <button class="copy-btn" data-id="${p.id}">Copy card text</button>
+      </div>
+    </div>
+  `;
+}
+
+function render() {
+  const filtered = PROJECTS.filter(matchesFilters);
+  lastFiltered = filtered;
+  const grid = document.getElementById("cardGrid");
+  const empty = document.getElementById("emptyState");
+  document.getElementById("resultsNum").textContent = filtered.length;
+  document.getElementById("headerCount").textContent = `${PROJECTS.length} total projects`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = "";
+    empty.style.display = "block";
+  } else {
+    empty.style.display = "none";
+    grid.innerHTML = filtered.map(cardHTML).join("");
+  }
+
+  document.querySelectorAll(".copy-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const p = PROJECTS.find(x => x.id === btn.dataset.id);
+      const lines = [
+        p.name,
+        p.partners,
+        "",
+        p.description,
+        "",
+        `Theme: ${p.theme.join(", ") || "—"}`,
+        `Sub-theme: ${p.subtheme.join(", ") || "—"}`,
+        `Status: ${p.status || "—"}`,
+        `Evaluation Type: ${p.evaluationType.join(", ") || "—"}`,
+        `Study Design: ${p.studyDesign.join(", ") || "—"}`,
+        `Services: ${p.services.join(", ") || "—"}`,
+        `Verticals: ${p.verticals.join(", ") || "—"}`
+      ];
+      const text = lines.join("\n");
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy card text"; btn.classList.remove("copied"); }, 1400);
+      });
+    });
+  });
+
+  document.querySelectorAll(".details-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => e.stopPropagation());
+  });
+
+  document.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("click", () => {
+      window.location.hash = `#/project/${card.dataset.id}`;
+    });
+  });
+}
+
+document.getElementById("searchBox").addEventListener("input", (e) => {
+  state.search = e.target.value;
+  render();
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  state.search = "";
+  document.getElementById("searchBox").value = "";
+  FILTER_FIELDS.forEach(f => state[f].clear());
+  AND_OR_FIELDS.forEach(f => filterMode[f] = "any");
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  buildModeToggles();
+  render();
+});
+
+// =====================================================================
+// Export filtered results as a table, copied to the clipboard as real
+// HTML (so pasting into Word or Google Docs produces an actual table,
+// not a wall of text) with a plain-text fallback for anywhere that
+// doesn't accept rich content.
+// =====================================================================
+function buildExportTable(projects) {
+  const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Small inline-styled "pill" used inside the Tags cell — inline styles
+  // are necessary (rather than CSS classes) because Word/Google Docs
+  // strips <style> blocks and external stylesheets on paste, so every
+  // color has to travel with the element itself.
+  const pill = (text, bg, color, border) =>
+    `<span style="display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;` +
+    `border-radius:9px;margin:0 4px 4px 0;background:${bg};color:${color};` +
+    `border:1px solid ${border || color};white-space:nowrap;">${esc(text)}</span>`;
+
+  const STATUS_COLORS = {
+    Ongoing: ["#fff4d6", "#92681a"],
+    Completed: ["#e3f3e6", "#2c6e3f"]
+  };
+
+  const tagsCellHTML = (p) => {
+    let out = "";
+    const [sBg, sColor] = STATUS_COLORS[p.status] || ["#f0f0f0", "#555555"];
+    out += pill(p.status || "—", sBg, sColor);
+    p.theme.forEach(t => out += pill(t, "#e8eef7", "#2b4a8c"));
+    p.subtheme.forEach(s => out += pill(s, "#e1f3f3", "#069ba1"));
+    p.evaluationType.forEach(s => out += pill(s, "#ffffff", "#c97a2b"));
+    p.studyDesign.forEach(s => out += pill(s, "#ffffff", "#5d6b78", "#dde3e6"));
+    p.services.forEach(s => out += pill(s, "#f7f6f2", "#5d6b78", "#dde3e6"));
+    p.verticals.forEach(s => out += pill(s, "#f1e9f7", "#6b3fa0"));
+    return out || "—";
+  };
+
+  const headers = ["Project Name", "Description", "Partners / Funders", "Tags"];
+  const rows = projects.map(p => [
+    { text: p.name, html: `<strong>${esc(p.name)}</strong>` },
+    { text: p.description },
+    { text: p.partners },
+    { text: [p.status, ...p.theme, ...p.subtheme, ...p.evaluationType, ...p.studyDesign, ...p.services, ...p.verticals].filter(Boolean).join(", "), html: tagsCellHTML(p) }
+  ]);
+
+  let html = `<table border="1" cellspacing="0" cellpadding="8" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;width:100%;">`;
+  html += `<thead><tr>${headers.map(h => `<th style="background:#13577e;color:#ffffff;text-align:left;padding:8px 10px;">${esc(h)}</th>`).join("")}</tr></thead>`;
+  html += `<tbody>${rows.map(r => `<tr>${r.map(c => `<td style="padding:8px 10px;vertical-align:top;line-height:1.5;">${c.html || esc(c.text)}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  html += `</table>`;
+
+  const text = [headers.join("\t"), ...rows.map(r => r.map(c => String(c.text || "").replace(/\t/g, " ")).join("\t"))].join("\n");
+
+  return { html, text };
+}
+
+document.getElementById("exportBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("exportBtn");
+  const { html, text } = buildExportTable(lastFiltered);
+
+  try {
+    if (window.ClipboardItem) {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" })
+      });
+      await navigator.clipboard.write([item]);
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+    btn.textContent = `Copied ${lastFiltered.length} project${lastFiltered.length === 1 ? "" : "s"} as a table`;
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = "Export results to table";
+      btn.classList.remove("copied");
+    }, 2200);
+  } catch (err) {
+    // Clipboard write blocked (permissions, insecure context, etc.) —
+    // fall back to downloading a standalone HTML file with the table,
+    // which opens cleanly in Word/Docs via "Open" or copy-paste.
+    const blob = new Blob([`<html><head><meta charset="utf-8"></head><body>${html}</body></html>`], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cerp-projects-export.html";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    btn.textContent = "Downloaded as file instead";
+    setTimeout(() => { btn.textContent = "Export results to table"; }, 2200);
+  }
+});
+
+// =====================================================================
+// Project detail page (hash-routed: #/project/<id>)
+// =====================================================================
+// Each project card links to #/project/<id>. We intercept the hash
+// instead of loading a real second HTML page, since the dashboard is a
+// single static file fed by the Google Sheet — this keeps everything
+// in one file while still giving each project its own bookmarkable,
+// shareable URL and back button behavior.
+
+const RESOURCE_ICONS = {
+  pdf: "📄",
+  doc: "📝",
+  data: "📊",
+  link: "🔗"
+};
+
+function resourceItemHTML(r) {
+  const icon = RESOURCE_ICONS[r.type] || RESOURCE_ICONS.link;
+  const label = r.label || r.url;
+  return `
+    <a class="resource-item" href="${r.url}" target="_blank" rel="noopener noreferrer">
+      <span class="resource-icon">${icon}</span>
+      <span class="resource-label">${label}</span>
+    </a>`;
+}
+
+function detailPageHTML(p) {
+  const themePills = p.theme.map(t => `<span class="card-area-pill pill-${pillClass(t)}">${t}</span>`).join("");
+  const subthemeTags = p.subtheme.map(s => `<span class="subtheme-tag">${s}</span>`).join("");
+  const evalTags = p.evaluationType.map(s => `<span class="tag evaltype">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+  const designTags = p.studyDesign.map(s => `<span class="tag design">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+  const servicesTags = p.services.map(s => `<span class="tag services">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+  const verticalsTags = p.verticals.map(s => `<span class="tag vertical">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+
+  const resourcesHTML = (p.resources && p.resources.length)
+    ? `<div class="resource-list">${p.resources.map(resourceItemHTML).join("")}</div>`
+    : `<div class="resource-empty">
+        No resources added yet. To add reports, decks, or links for this project,
+        open <code>sheet-loader.js</code>, find <code>PROJECT_RESOURCES["${p.id}"]</code>,
+        and add an entry like:<br><br>
+        <code>{ label: "Endline report (PDF)", url: "https://...", type: "pdf" }</code>
+      </div>`;
+
+  return `
+    <button class="back-link" id="backToListBtn">&larr; Back to all projects</button>
+    <div class="detail-card">
+      <div class="detail-head-row">
+        <div class="theme-row">${themePills}</div>
+        <span class="status-pill status-${p.status}">${p.status}</span>
+      </div>
+      <h1>${p.name}</h1>
+      <div class="subtheme-row">${subthemeTags}</div>
+      <div class="partners">${p.partners}</div>
+
+      <div class="detail-section">
+        <h2>Overview</h2>
+        <p>${p.description}</p>
+      </div>
+
+      <div class="detail-section">
+        <h2>Evaluation &amp; Study Design</h2>
+        <div class="detail-tag-block">${evalTags}${designTags}</div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Services</h2>
+        <div class="detail-tag-block">${servicesTags}</div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Verticals</h2>
+        <div class="detail-tag-block">${verticalsTags}</div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Resources</h2>
+        ${resourcesHTML}
+      </div>
+    </div>
+  `;
+}
+
+function showDetailPage(id) {
+  const p = PROJECTS.find(x => x.id === id);
+  const detailPage = document.getElementById("detailPage");
+  const listLayout = document.getElementById("listLayout");
+
+  if (!p) {
+    detailPage.innerHTML = `
+      <button class="back-link" id="backToListBtn">&larr; Back to all projects</button>
+      <div class="detail-card"><p>That project couldn't be found — it may have been renamed or removed from the sheet.</p></div>`;
+  } else {
+    detailPage.innerHTML = detailPageHTML(p);
+  }
+
+  listLayout.style.display = "none";
+  detailPage.style.display = "block";
+  document.getElementById("backToListBtn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+  window.scrollTo(0, 0);
+}
+
+function showListPage() {
+  document.getElementById("detailPage").style.display = "none";
+  document.getElementById("listLayout").style.display = "";
+}
+
+function handleRoute() {
+  const hash = window.location.hash; // e.g. "#/project/edu-leaps"
+  const match = hash.match(/^#\/project\/(.+)$/);
+  if (match) {
+    showDetailPage(decodeURIComponent(match[1]));
+  } else {
+    showListPage();
+  }
+}
+
+window.addEventListener("hashchange", handleRoute);
+
+</script>
+
+
+</body>
+</html>
