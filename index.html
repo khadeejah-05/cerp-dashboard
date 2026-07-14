@@ -1,0 +1,2077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>CERP Project Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #00547f;
+    --teal: #009fa3;
+    --teal-light: #e1f3f3;
+    --cream: #f7f6f2;
+    --ink: #1c2530;
+    --muted: #5d6b78;
+    --border: #dde3e6;
+    --amber: #c97a2b;
+    --amber-light: #fbf0e3;
+  }
+  * { box-sizing: border-box; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    border-top: 4px solid var(--teal);
+  }
+  a:focus-visible, button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 2px;
+  }
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  header h1 {
+    margin: 0;
+    line-height: 0;
+  }
+  .brand-logo-badge {
+    background: white;
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+  }
+  .brand-logo {
+    height: 30px;
+    width: auto;
+    display: block;
+  }
+  header .tagline {
+    font-size: 12.5px;
+    color: #c3d8e0;
+    font-style: italic;
+  }
+  header .count {
+    font-size: 13px;
+    color: #c9dde2;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 68px);
+  }
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 480px) {
+    .main { padding: 16px 14px 40px; }
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .filters {
+    background: white;
+    border-right: 1px solid var(--border);
+    padding: 20px 18px;
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
+    overflow-y: auto;
+  }
+  /* In the stacked single-column layout (see the 880px breakpoint on
+     .layout below), a sticky/internally-scrolling sidebar just traps the
+     viewport — it can be nearly as tall as the screen with the actual
+     project cards invisible below the fold and no hint they exist. Let it
+     flow normally instead, so one scroll gesture moves through filters
+     straight into the results. Placed after the base .filters rule (not
+     inside the earlier 880px block near .layout) so it actually wins the
+     cascade — same specificity, later source order. */
+  @media (max-width: 880px) {
+    .filters {
+      position: static;
+      max-height: none;
+      overflow-y: visible;
+    }
+  }
+  .filters h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--muted);
+    margin: 18px 0 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .filters h2:first-child { margin-top: 0; }
+  .filter-heading {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .filter-heading::before {
+    content: "▾";
+    display: inline-block;
+    flex-shrink: 0;
+    font-size: 10px;
+    color: var(--muted);
+    transition: transform 0.15s;
+  }
+  .filter-heading.collapsed::before { transform: rotate(-90deg); }
+  .filter-group.collapsed { display: none; }
+  .match-row {
+    margin: 2px 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .match-sentence {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.6;
+  }
+  .match-select {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2px 6px;
+    background: white;
+    cursor: pointer;
+  }
+  .match-select:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  .match-caption {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+  .filter-group label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13.5px;
+    padding: 6px 2px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .filter-group label:hover { color: var(--teal); }
+  .filter-group input[type="checkbox"] {
+    accent-color: var(--teal);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+  .filter-group .badge-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--cream);
+    border-radius: 8px;
+    padding: 1px 6px;
+  }
+  .search-box {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13.5px;
+    margin-bottom: 4px;
+  }
+  .search-box:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  .clear-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 8px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .clear-btn:hover { background: var(--teal-light); color: var(--teal); }
+
+  /* ---------- Hierarchical "Study Design" filter tree ---------- */
+  .design-tree-group {
+    margin-bottom: 10px;
+  }
+  .design-tree-group .group-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin: 10px 0 2px;
+    padding: 0 2px;
+  }
+  .design-tree-group .group-label:first-child { margin-top: 0; }
+  .filter-group label.indent {
+    padding-left: 18px;
+    position: relative;
+  }
+  .filter-group label.indent::before {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    width: 7px;
+    height: 1px;
+    background: var(--border);
+  }
+  .filter-group label.leaf {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .main {
+    padding: 22px 28px 60px;
+  }
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .results-count {
+    font-size: 13.5px;
+    color: var(--muted);
+  }
+  .results-count strong { color: var(--ink); }
+  .view-toggle {
+    display: flex;
+    gap: 6px;
+    font-size: 12.5px;
+  }
+  .view-toggle button {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+    color: var(--muted);
+  }
+  .view-toggle button.active {
+    background: var(--teal);
+    color: white;
+    border-color: var(--teal);
+  }
+  .export-btn {
+    padding: 7px 14px;
+    border: 1px solid var(--navy);
+    background: var(--navy);
+    color: white;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .export-btn:hover { background: #004263; }
+  .export-btn.copied { background: #2c6e3f; border-color: #2c6e3f; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent, var(--border));
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow 0.15s;
+  }
+  .card { cursor: pointer; }
+  .card:hover {
+    box-shadow: 0 4px 14px rgba(12,47,79,0.10);
+  }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .card-area-pill {
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  /* .pill-* rules are generated at runtime from THEME_COLORS by
+     injectGeneratedColorCSS() below, so the color values live in exactly
+     one place (also read by the export-table pill generator). */
+
+  .theme-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .vertical-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .status-pill {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+  /* .status-* rules are generated at runtime from STATUS_COLORS, same
+     reasoning as .pill-* above. */
+
+  .card h3 {
+    font-size: 15px;
+    margin: 2px 0 0;
+    color: var(--navy);
+    line-height: 1.3;
+  }
+  .card .subtheme-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .subtheme-tag {
+    font-size: 11px;
+    color: var(--teal);
+    font-weight: 600;
+    background: var(--teal-light);
+    padding: 1px 7px;
+    border-radius: 8px;
+  }
+  .card p.desc {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.5;
+    margin: 4px 0;
+  }
+  .card .partners {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 6px;
+  }
+  .tag {
+    font-size: 10.5px;
+    padding: 2px 7px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    color: var(--ink);
+    background: var(--cream);
+  }
+  /* Services and Study Design are intentionally styled identically (plain
+     white tag, no color coding) so neither dimension visually competes
+     with the other on a card. */
+  .tag.services, .tag.design { background: white; color: var(--ink); border-color: var(--border); }
+  .tag.vertical { background: #f1e9f7; color: #6b3fa0; border-color: #6b3fa0; font-weight: 600; }
+  .tag.location { background: var(--amber-light); color: var(--amber); border-color: var(--amber); font-weight: 600; }
+
+  .active-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .active-filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    padding: 3px 4px 3px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--ink);
+  }
+  .active-filter-chip .chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+  }
+  .active-filter-chip .chip-remove:hover { background: var(--teal-light); color: var(--teal); }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .copy-btn {
+    align-self: flex-start;
+    margin-top: 6px;
+    font-size: 11px;
+    padding: 6px 12px;
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  .copy-btn:hover { background: var(--teal); color: white; }
+  .copy-btn.copied { background: var(--teal); color: white; border-color: var(--teal); }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    align-items: center;
+  }
+  .details-btn {
+    font-size: 11px;
+    padding: 6px 12px;
+    border: 1px solid var(--navy);
+    color: var(--navy);
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .details-btn:hover { background: var(--navy); color: white; }
+
+  /* ---------- Project detail page ---------- */
+  .detail-page {
+    padding: 22px 28px 60px;
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--teal);
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-bottom: 18px;
+    font-weight: 600;
+  }
+  .back-link:hover { text-decoration: underline; }
+  .detail-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+  }
+  .detail-head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .detail-card h1 {
+    font-size: 22px;
+    color: var(--navy);
+    margin: 10px 0 4px;
+    line-height: 1.3;
+  }
+  .detail-card .partners {
+    font-size: 13px;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 18px;
+  }
+  .detail-section {
+    margin-top: 22px;
+  }
+  .detail-section h2 {
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin: 0 0 10px;
+  }
+  .detail-section p {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--ink);
+    margin: 0;
+  }
+  .detail-tag-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .detail-tag-block .tag, .detail-tag-block .subtheme-tag, .detail-tag-block .card-area-pill {
+    font-size: 11.5px;
+  }
+  .resource-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .resource-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--cream);
+    text-decoration: none;
+    color: var(--ink);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .resource-item:hover {
+    border-color: var(--teal);
+    background: var(--teal-light);
+  }
+  .resource-icon {
+    font-size: 16px;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: white;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .resource-item .resource-label {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+  .resource-empty {
+    font-size: 13px;
+    color: var(--muted);
+    background: var(--cream);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    line-height: 1.55;
+  }
+  .resource-empty code {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 12px;
+  }
+
+  /* ---------- About button + data banner ---------- */
+  .about-btn {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.35);
+    color: white;
+    font-size: 12.5px;
+    padding: 7px 14px;
+    border-radius: 7px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .about-btn:hover { background: rgba(255,255,255,0.22); }
+
+  .data-banner {
+    padding: 9px 28px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-banner.loading { background: var(--teal-light); color: var(--navy); }
+  .data-banner.error { background: var(--amber-light); color: #8a3b1f; }
+
+  .skeleton-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    height: 190px;
+  }
+  .skeleton-line {
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(90deg, var(--border) 25%, #eef1f2 37%, var(--border) 63%);
+    background-size: 400% 100%;
+    animation: shimmer 1.4s ease infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+  /* ---------- About modal ---------- */
+  #aboutModal {
+    background: var(--cream);
+    border: none;
+    border-radius: 14px;
+    max-width: 760px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(10,30,45,0.35);
+    padding: 0;
+    margin: auto;
+  }
+  #aboutModal::backdrop {
+    background: rgba(20,30,38,0.55);
+  }
+  .modal-head {
+    background: var(--navy);
+    color: white;
+    padding: 18px 26px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .modal-head h2 {
+    margin: 0;
+    font-size: 17px;
+  }
+  .modal-close {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.3); }
+  .modal-body { padding: 22px 26px 30px; }
+  .modal-body p.lead {
+    font-size: 13.5px;
+    color: var(--muted);
+    line-height: 1.55;
+    margin-top: 0;
+  }
+  .modal-section {
+    margin-top: 22px;
+  }
+  .modal-section h3 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--navy);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+    margin: 0 0 12px;
+  }
+  .breakdown-theme {
+    margin-bottom: 14px;
+  }
+  .breakdown-theme-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .breakdown-theme-head .count-note {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .breakdown-subs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding-left: 2px;
+  }
+  .sub-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    background: white;
+    border: 1px solid var(--border);
+    padding: 3px 9px;
+    border-radius: 7px;
+    color: var(--ink);
+  }
+  .sub-chip .also-in {
+    font-size: 9.5px;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .glossary-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .glossary-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .glossary-item .term-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .glossary-item .term-name {
+    font-weight: 700;
+    font-size: 13.5px;
+    color: var(--navy);
+  }
+  .glossary-item .term-meta {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .glossary-item .term-used-in {
+    font-size: 11.5px;
+    color: var(--teal);
+    margin-top: 4px;
+  }
+  .modal-note {
+    font-size: 12px;
+    color: var(--muted);
+    background: var(--teal-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    margin: 18px 0 4px;
+  }
+  .summary-tile {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  .summary-tile .summary-count {
+    display: block;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .summary-tile .summary-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1><span class="brand-logo-badge"><img src="logo.png" alt="CERP – Evidence Matters" class="brand-logo"></span></h1>
+    <span class="tagline">Project Dashboard</span>
+  </div>
+  <div style="display:flex; align-items:center; gap:14px;">
+    <button class="about-btn" id="aboutBtn" type="button">About this dashboard</button>
+    <div class="count" id="headerCount"></div>
+  </div>
+</header>
+
+<div class="data-banner" id="dataBanner" style="display:none;"></div>
+
+<div class="layout" id="listLayout">
+  <aside class="filters">
+    <h2>Search</h2>
+
+    <div class="match-row">
+      <span class="match-sentence">Show projects matching
+        <select id="matchModeSelect" class="match-select" title="Any: a project matches if it contains at least one of your search keywords, or has at least one checked filter box, anywhere below. All: a project must contain every keyword and have every filter box you've checked.">
+          <option value="any">any</option>
+          <option value="all">all</option>
+        </select>
+        of the keywords and filters below.
+      </span>
+      <div class="match-caption" id="matchCaption"></div>
+    </div>
+
+    <label for="searchBox" class="sr-only">Search projects by keyword</label>
+    <input type="text" class="search-box" id="searchBox" placeholder="Search — e.g. education, RCT (comma = separate keywords)">
+
+    <h2 class="filter-heading" data-target="themeFilters">Theme</h2>
+    <div class="filter-group" id="themeFilters"></div>
+
+    <h2 class="filter-heading" data-target="subthemeFilters">Sub-theme</h2>
+    <div class="filter-group" id="subthemeFilters"></div>
+
+    <h2 class="filter-heading" data-target="statusFilters">Status</h2>
+    <div class="filter-group" id="statusFilters"></div>
+
+    <h2 class="filter-heading" data-target="locationFilters">Location</h2>
+    <div class="filter-group" id="locationFilters"></div>
+
+    <h2 class="filter-heading" data-target="studyDesignFilters">Study Design</h2>
+    <div class="filter-group" id="studyDesignFilters"></div>
+
+    <h2 class="filter-heading" data-target="servicesFilters">Services</h2>
+    <div class="filter-group" id="servicesFilters"></div>
+
+    <h2 class="filter-heading" data-target="verticalsFilters">Verticals</h2>
+    <div class="filter-group" id="verticalsFilters"></div>
+
+    <button class="clear-btn" id="clearBtn">Clear all filters</button>
+  </aside>
+
+  <main class="main">
+    <div class="toolbar">
+      <div class="results-count"><strong id="resultsNum">0</strong> projects shown</div>
+      <button class="export-btn" id="exportBtn" type="button">Export results to table</button>
+    </div>
+    <div class="active-filters" id="activeFilters"></div>
+    <div class="grid" id="cardGrid"></div>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      No projects match the current filters. Try clearing some filters.
+    </div>
+  </main>
+</div>
+
+<div class="detail-page" id="detailPage" style="display:none;"></div>
+
+<dialog id="aboutModal" aria-labelledby="aboutModalTitle">
+  <div class="modal-head">
+    <h2 id="aboutModalTitle">About this dashboard</h2>
+    <button class="modal-close" id="modalCloseBtn" aria-label="Close">&times;</button>
+  </div>
+  <div class="modal-body" id="modalBody">
+    <!-- filled in by JS -->
+  </div>
+</dialog>
+
+<script src="sheet-loader.js?v=5"></script>
+<script>
+const aboutModal = document.getElementById("aboutModal");
+document.getElementById("aboutBtn").addEventListener("click", () => {
+  aboutModal.showModal();
+});
+document.getElementById("modalCloseBtn").addEventListener("click", () => {
+  aboutModal.close();
+});
+aboutModal.addEventListener("click", (e) => {
+  if (e.target === aboutModal) aboutModal.close();
+});
+
+const SERVICES_DESC = {
+  "MLE": "Evaluating a specific program or intervention's implementation or outcomes — process or impact evaluation of something CERP didn't necessarily build itself.",
+  "Capacity Building": "M&E systems or infrastructure work done for a client — building their internal M&E capability, dashboards, or diagnostic frameworks — rather than evaluating one specific program.",
+  "Survey": "Data collection is the entire deliverable, with no evaluation or capacity-building layer attached. Reserved for projects where the dataset itself is what was commissioned — a project that used a survey as one input into a larger evaluation doesn't also get tagged Survey.",
+  "Software Development": "Labs-built apps, dashboards, and digital tools.",
+  "Monitoring only": "Pure compliance or verification tracking, with no evaluative or analytical write-up. Falls under MLE. Reserved for future third-party monitoring engagements — no current project fits this cleanly."
+};
+const VERTICALS_DESC = {
+  "Analytics": "Applying analytical techniques to existing data to answer a specific operational or research question.",
+  "Lab": "Rapid, hands-on experimentation or prototyping work, often testing a new tool or approach at small scale.",
+  "Survey": "Original data collection through structured survey instruments, in the field or by phone.",
+  "Learning Hub": "Work run through or in partnership with CERP's Learning Hub function.",
+  "Policy Advisory": "Direct advisory support to a government or policy partner, distinct from an arms-length evaluation.",
+  "Research": "Academic or applied research work, often oriented toward publication or a broader evidence base.",
+  "Strategic Communications": "Communications strategy or dissemination work supporting a project's findings or a partner's messaging."
+};
+const LOCATION_DESC = {
+  "Punjab": "Fieldwork or study sites located in Punjab province.",
+  "Sindh": "Fieldwork or study sites located in Sindh province.",
+  "Khyber Pakhtunkhwa": "Fieldwork or study sites located in Khyber Pakhtunkhwa province.",
+  "Balochistan": "Fieldwork or study sites located in Balochistan province.",
+  "Islamabad Capital Territory": "Fieldwork or study sites located in Islamabad Capital Territory.",
+  "Gilgit-Baltistan": "Fieldwork or study sites located in Gilgit-Baltistan.",
+  "Azad Jammu & Kashmir": "Fieldwork or study sites located in Azad Jammu & Kashmir.",
+  "National": "Explicitly nationwide work spanning all (or nearly all) provinces, rather than a specific regional site.",
+  "International": "Fieldwork or project components based outside Pakistan."
+};
+const STUDY_DESIGN_DESC = {
+  "RCT": "Randomized Controlled Trial — participants are randomly assigned to treatment or control to isolate causal impact.",
+  "Stepped Wedge": "A type of RCT where all participants eventually receive the intervention, but the order of rollout is randomized.",
+  "Difference-in-Differences (DiD)": "A quasi-experimental technique comparing the change over time in an outcome between a treated and untreated group.",
+  "Matching": "Pairs treated units with untreated units that look similar on observed characteristics, to approximate a controlled comparison without randomization.",
+  "Pre-Post / Before-After": "Compares the same group's outcomes before and after an intervention, without a separate comparison group.",
+  "Descriptive": "Quantitative data collection or analysis with no counterfactual or comparison group driving the study — market mapping, landscaping studies, censuses, and similar work. Falls under Quantitative.",
+  "Longitudinal": "Qualitative tracking of the same people, households, or units repeatedly over time to understand change. Falls under Qualitative.",
+  "Mixed Methods": "A qualitative strand that's a genuinely separate, co-equal part of the study alongside a quantitative one — not just a secondary method inside an otherwise causal design.",
+  "Quasi-Experimental": "Compares treatment and comparison groups that weren't randomly assigned, using statistical techniques to approximate a controlled comparison. An older tag some existing projects still carry — see Difference-in-Differences (DiD) and Matching for its more specific successors.",
+  "Cross-Sectional": "Captures data at a single point in time across a population or sample. An older tag some existing projects still carry — see Descriptive.",
+  "Qualitative": "Interviews, focus groups, or observation aimed at understanding context, mechanisms, or lived experience. An older tag some existing projects still carry — see Longitudinal, or Mixed Methods if it was a co-equal strand alongside quantitative work."
+};
+
+function buildParentMap(parentField, childField) {
+  // returns { childValue: Set(parentValues) }
+  const m = {};
+  PROJECTS.forEach(p => {
+    (p[childField] || []).forEach(child => {
+      if (!child) return;
+      if (!m[child]) m[child] = new Set();
+      (p[parentField] || []).forEach(parent => m[child].add(parent));
+    });
+  });
+  return m;
+}
+
+function countProjectsFor(field, value) {
+  return PROJECTS.filter(p => (p[field] || []).includes(value)).length;
+}
+
+function buildThemeBreakdown() {
+  const subToThemes = buildParentMap("theme", "subtheme");
+  const themes = unique("theme");
+
+  // Decide one "primary" theme per subtheme: whichever theme has the most
+  // projects carrying that subtheme (ties broken by alphabetical theme name
+  // for stability). This is what "most associated with" means in practice.
+  const primaryThemeForSub = {};
+  Object.keys(subToThemes).forEach(sub => {
+    const candidates = [...subToThemes[sub]];
+    let best = null, bestCount = -1;
+    candidates.sort().forEach(theme => {
+      const count = PROJECTS.filter(p => p.theme.includes(theme) && p.subtheme.includes(sub)).length;
+      if (count > bestCount) { bestCount = count; best = theme; }
+    });
+    primaryThemeForSub[sub] = best;
+  });
+
+  let html = "";
+  themes.forEach(theme => {
+    const subsHere = [...new Set(
+      PROJECTS.filter(p => p.theme.includes(theme)).flatMap(p => p.subtheme)
+    )]
+      .filter(sub => primaryThemeForSub[sub] === theme) // only render where this IS the primary owner
+      .sort();
+
+    const projCount = countProjectsFor("theme", theme);
+    html += `<div class="breakdown-theme">
+      <div class="breakdown-theme-head">
+        <span class="card-area-pill pill-${theme.replace(/ & /g," ").replace(/ /g,"-")}">${theme}</span>
+        <span class="count-note">${projCount} project${projCount === 1 ? "" : "s"}</span>
+      </div>`;
+
+    if (subsHere.length) {
+      html += `<div class="breakdown-subs">`;
+      subsHere.forEach(sub => {
+        const allOtherParents = [...subToThemes[sub]].filter(t => t !== theme);
+        const alsoIn = allOtherParents.length
+          ? `<span class="also-in">also: ${allOtherParents.join(", ")}</span>`
+          : "";
+        html += `<span class="sub-chip">${sub}${alsoIn}</span>`;
+      });
+      html += `</div>`;
+    } else {
+      html += `<div class="breakdown-subs"><span class="count-note">No sub-themes tagged yet</span></div>`;
+    }
+    html += `</div>`;
+  });
+  return html;
+}
+
+function buildGlossarySection(values, descMap, field, parentField, parentLabel) {
+  const parentMap = parentField ? buildParentMap(parentField, field) : null;
+  let html = `<div class="glossary-list">`;
+  values.forEach(val => {
+    const count = countProjectsFor(field, val);
+    const desc = descMap[val] || "No description on file yet.";
+    let usedIn = "";
+    if (parentMap && parentMap[val]) {
+      usedIn = `<div class="term-used-in">Used under: ${[...parentMap[val]].join(", ")}</div>`;
+    }
+    html += `<div class="glossary-item">
+      <div class="term-row">
+        <span class="term-name">${val}</span>
+        <span class="term-meta">${count} project${count === 1 ? "" : "s"}</span>
+      </div>
+      <p style="margin:6px 0 0; font-size:12.5px; color:var(--ink); line-height:1.5;">${desc}</p>
+      ${usedIn}
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function buildSummaryGrid() {
+  const tiles = [
+    { label: "Total projects", count: PROJECTS.length },
+    { label: "Themes", count: unique("theme").length },
+    { label: "Locations tagged", count: PROJECTS.filter(p => p.location.length).length },
+    { label: "Study designs", count: unique("studyDesign").length },
+    { label: "Services", count: unique("services").length },
+    { label: "Verticals tagged", count: PROJECTS.filter(p => p.verticals.length).length }
+  ];
+  return `<div class="summary-grid">${tiles.map(t => `
+    <div class="summary-tile">
+      <span class="summary-count">${t.count}</span>
+      <span class="summary-label">${t.label}</span>
+    </div>`).join("")}</div>`;
+}
+
+// One collapsible-heading pattern reused for both the sidebar filters and
+// this modal's accordion — see initCollapsible() below. `targetId` doubles
+// as the section's DOM id and its aria-controls target.
+function accordionSection(targetId, title, bodyHTML) {
+  return `
+    <div class="modal-section">
+      <h3 class="filter-heading" data-target="${targetId}">${title}</h3>
+      <div class="filter-group" id="${targetId}">${bodyHTML}</div>
+    </div>`;
+}
+
+function buildAboutModalContent() {
+  const body = document.getElementById("modalBody");
+
+  const themeHTML = buildThemeBreakdown();
+  const designHTML = buildGlossarySection(unique("studyDesign"), STUDY_DESIGN_DESC, "studyDesign", null, null);
+  const servicesHTML = buildGlossarySection(unique("services"), SERVICES_DESC, "services", null, null);
+  const verticalsHTML = buildGlossarySection(VERTICALS_OPTIONS, VERTICALS_DESC, "verticals", null, null);
+  const locationHTML = buildGlossarySection(unique("location"), LOCATION_DESC, "location", null, null);
+
+  body.innerHTML = `
+    <p class="lead">This dashboard is a read-only, searchable catalog of CERP's project portfolio. Every project lives in a Google Sheet — this page just displays it, filtered however you like; nothing here can be edited from the browser.</p>
+
+    ${buildSummaryGrid()}
+
+    ${accordionSection("modalSection-howto", "How to search &amp; filter", `
+      <p style="font-size:13px; line-height:1.6; color:var(--ink); margin:0 0 10px;">
+        The <strong>search box</strong> matches keywords across the name, description, partners, theme,
+        sub-theme, and location. Typing <em>"education RCT"</em> (no comma) finds projects that mention both
+        words anywhere, not just an exact phrase. Separate multiple keywords with a <strong>comma or
+        semicolon</strong> — e.g. <em>"education, gender"</em> — to search for each one independently.
+      </p>
+      <p style="font-size:13px; line-height:1.6; color:var(--ink); margin:0 0 10px;">
+        The <strong>"Show projects matching…" sentence</strong> above the search box controls how everything you've
+        typed or checked — comma-separated search keywords and filter checkboxes alike — combines. Set it to
+        <strong>any</strong> (the default) and a project shows up if it matches at least one of your keywords or has
+        at least one of your checked boxes, anywhere. Set it to <strong>all</strong> and a project only shows up if
+        it matches <em>every</em> keyword you've typed and carries <em>every</em> box you've checked, across every
+        category — the rarer, stricter case.
+      </p>
+      <p style="font-size:13px; line-height:1.6; color:var(--ink); margin:0;">
+        Whatever you've checked appears as removable chips above the results grid — click a chip's <strong>×</strong>
+        to drop that one filter without hunting back through the sidebar. Click any filter section's heading to
+        collapse it; your collapsed sections are remembered next time you visit.
+      </p>
+    `)}
+
+    ${accordionSection("modalSection-cards", "Cards, details &amp; exporting", `
+      <p style="font-size:13px; line-height:1.6; color:var(--ink); margin:0 0 10px;">
+        Click any <strong>project card</strong> (or its "View details &amp; resources" link) to open that project's
+        full page — its complete description, every tag it carries, and any attached reports or links. The page
+        has its own URL, so it's bookmarkable and shareable; use "Back to all projects" or your browser's back
+        button to return to the filtered list you came from.
+      </p>
+      <p style="font-size:13px; line-height:1.6; color:var(--ink); margin:0 0 10px;">
+        <strong>Copy card text</strong> (on each card) copies that one project's details as plain text — handy for
+        pasting a single project into an email or chat.
+      </p>
+      <p style="font-size:13px; line-height:1.6; color:var(--ink); margin:0;">
+        <strong>Export results to table</strong> (top right) copies every <em>currently filtered</em> project as a
+        real table, two projects per row, ready to paste straight into Word or Google Docs.
+      </p>
+    `)}
+
+    ${accordionSection("modalSection-theme", "Theme &amp; Sub-theme", `
+      ${themeHTML}
+      <div class="modal-note">Sub-themes that apply to more than one theme are shown once, under the theme they're most associated with, with their other themes noted alongside.</div>
+    `)}
+
+    ${accordionSection("modalSection-location", "Location", `
+      ${locationHTML}
+      <div class="modal-note">Tagged by the Pakistani province(s)/region(s) a project's actual fieldwork touches, not just the province named in its title — a project can carry more than one. This dimension was backfilled by hand from project write-ups rather than the sheet, so some entries are flagged for a second look; see the comments next to each project's fallback tags in <code>sheet-loader.js</code> for specifics.</div>
+    `)}
+
+    ${accordionSection("modalSection-design", "Study Design", `
+      ${designHTML}
+      <div class="modal-note">A project is tagged here by its <strong>primary identification strategy</strong>, not every data-collection method it touches — a project with a comparison group is tagged by its causal design (RCT, DiD, etc.) even if it also runs a few qualitative interviews on the side. <strong>Quantitative</strong> groups every causal and descriptive design (RCT, Stepped Wedge, Difference-in-Differences, Matching, Pre-Post/Before-After, Descriptive); <strong>Qualitative</strong> covers Longitudinal qualitative tracking; and <strong>Mixed Methods</strong> is its own tag for when a qualitative/mixed strand is a genuinely separate, co-equal study alongside a quantitative one — the grouping headers are a sidebar visual only, not filters themselves. Multi-study portfolio programs (e.g. RISE, LEAPS) get one tag per distinct sub-study rather than being forced into one. Non-research/advisory projects aren't tagged here at all. Quasi-Experimental and Cross-Sectional are older tags that may still appear on older projects below even though they're no longer part of the sidebar's filter tree — see Descriptive, Difference-in-Differences (DiD), and Matching for their current equivalents.</div>
+    `)}
+
+    ${accordionSection("modalSection-services", "Services", `
+      ${servicesHTML}
+      <div class="modal-note">A project is tagged here by its <strong>primary commissioned deliverable</strong>, not every method touched along the way — a project that used a survey as one input into a larger evaluation is tagged MLE, not Survey; Survey is reserved for projects where the dataset itself is the whole deliverable. <strong>Monitoring only</strong> nests under MLE — a project can carry MLE alone, or MLE plus Monitoring only. Two genuinely separate deliverables (e.g. a survey that also feeds a custom-built dashboard) get both tags. A small number of pure program-design/delivery or incubation-management projects don't fit any of these categories and are left untagged here.</div>
+    `)}
+
+    ${accordionSection("modalSection-verticals", "Verticals", `
+      ${verticalsHTML}
+      <div class="modal-note">Verticals is a newer tagging dimension and not every project has been reviewed and tagged yet — an empty result here reflects the tagging backlog, not necessarily the absence of that kind of work.</div>
+    `)}
+  `;
+
+  initCollapsible("#modalBody", { persist: false, singleOpen: true });
+}
+</script>
+<script>
+let PROJECTS = [];
+let lastFiltered = [];
+
+const state = {
+  search: "",
+  theme: new Set(),
+  subtheme: new Set(),
+  status: new Set(),
+  location: new Set(),
+  studyDesign: new Set(),
+  services: new Set(),
+  verticals: new Set()
+};
+
+// All filter fields that "Clear all filters" should reset
+const FILTER_FIELDS = ["theme","subtheme","status","location","studyDesign","services","verticals"];
+
+// Fields whose values live in an array on the project (as opposed to
+// "status", which is a single value) — every multi-value field combines
+// under the one matchMode switch below.
+const MULTI_FIELDS = ["theme","subtheme","location","studyDesign","services","verticals"];
+
+// One switch for the whole sidebar, across every category AND the search
+// box at once:
+// "any" = a project matches if it has at least one checked box anywhere,
+//         or matches at least one comma/semicolon-separated search keyword
+// "all" = a project must have every box checked anywhere, across every
+//         category, AND match every search keyword
+// Replaces the old pair of controls (a per-category OR/AND switch next to
+// each heading, plus a separate global ALL CATEGORIES/ANY TAG switch) —
+// two overlapping toggle systems that most people never needed and that
+// mostly did nothing until several boxes were checked at once. Also now
+// drives the search box's comma/semicolon keyword groups (see
+// searchMatches()) rather than that having its own separate toggle.
+let matchMode = "any";
+
+// Single source of truth for theme/status colors — read by both the
+// generated .pill-*/.status-* CSS (injectGeneratedColorCSS) and the
+// export-table pill generator (buildExportTable), so a color only ever
+// needs to change in one place.
+const THEME_COLORS = {
+  "Education": { bg: "#e8eef7", fg: "#2b4a8c" },
+  "Health": { bg: "#e1f3f3", fg: "#009fa3" },
+  "Gender & Inclusion": { bg: "#f1e9f7", fg: "#6b3fa0" },
+  "Climate & Environment": { bg: "#e6f0e8", fg: "#2f7a4f" },
+  "Governance": { bg: "#fdeeea", fg: "#b5482f" },
+  "Social Protection": { bg: "#fef3e0", fg: "#a87311" },
+  "Economic Opportunity": { bg: "#e9f1fb", fg: "#1f5fa3" }
+};
+const STATUS_COLORS = {
+  "Ongoing": { bg: "#fff4d6", fg: "#92681a" },
+  "Completed": { bg: "#e3f3e6", fg: "#2c6e3f" }
+};
+
+// Verticals get their own palette, deliberately distinct from THEME_COLORS'
+// seven hues — a card now shows both a theme pill and a vertical pill at
+// once (see cardHTML), so the two dimensions need to read as different
+// things at a glance, not risk looking like the same tag twice.
+const VERTICALS_COLORS = {
+  "Analytics": { bg: "#eceafc", fg: "#3d3aa0" },
+  "Lab": { bg: "#fce8f3", fg: "#a8237a" },
+  "Survey": { bg: "#f6ebdf", fg: "#8a5324" },
+  "Learning Hub": { bg: "#e3f4fa", fg: "#1c7a94" },
+  "Policy Advisory": { bg: "#f3f0dc", fg: "#6b6018" },
+  "Research": { bg: "#e9edf2", fg: "#455a70" },
+  "Strategic Communications": { bg: "#fbe9ee", fg: "#96335a" }
+};
+
+// Generates the .pill-*/.vpill-*/.status-* CSS rules from THEME_COLORS/
+// VERTICALS_COLORS/STATUS_COLORS at load time, so those objects are the
+// only place these color values exist (also read directly by
+// buildExportTable's pill generator). Must run before the first
+// skeleton/card render so cards never reference an undefined pill class.
+function injectGeneratedColorCSS() {
+  let css = "";
+  Object.keys(THEME_COLORS).forEach(theme => {
+    const { bg, fg } = THEME_COLORS[theme];
+    css += `.pill-${pillClass(theme)} { background: ${bg}; color: ${fg}; }\n`;
+  });
+  Object.keys(VERTICALS_COLORS).forEach(vertical => {
+    const { bg, fg } = VERTICALS_COLORS[vertical];
+    css += `.vpill-${pillClass(vertical)} { background: ${bg}; color: ${fg}; }\n`;
+  });
+  Object.keys(STATUS_COLORS).forEach(status => {
+    const { bg, fg } = STATUS_COLORS[status];
+    css += `.status-${status} { background: ${bg}; color: ${fg}; }\n`;
+  });
+  const style = document.createElement("style");
+  style.id = "generated-color-css";
+  style.textContent = css;
+  document.head.appendChild(style);
+}
+
+// Verticals is a fixed, curated list (not derived from the data) so all
+// seven show up as filter options even before every project is tagged.
+// This dimension is not yet populated in the sheet — no project has a
+// confirmed vertical assignment, so every filter here reads 0 until
+// that tagging work happens.
+const VERTICALS_OPTIONS = [
+  "Analytics", "Lab", "Survey", "Learning Hub",
+  "Policy Advisory", "Research", "Strategic Communications"
+];
+
+// Study Design is one flat list — a project is tagged by its primary
+// identification strategy (the causal design driving the study, if it has
+// one), not by every data-collection method it happens to touch. Qualitative
+// or Mixed Methods only apply when there's no counterfactual/comparison
+// group at all, or when a qualitative/mixed strand is a genuinely separate,
+// co-equal study (the "umbrella" case — a multi-study portfolio program
+// like RISE or LEAPS gets one tag per distinct sub-study rather than being
+// forced into one). Non-research/advisory projects (pure software builds,
+// incubation management, etc.) are left untagged here rather than forced
+// into a design that doesn't apply. Rendered as a tree, but filters exactly
+// like any other multi-value field: a project matches if it carries ANY of
+// the selected values in its `studyDesign` array — the Quantitative/
+// Qualitative grouping is a sidebar visual only, not a filter of its own.
+const STUDY_DESIGN_TREE = [
+  {
+    group: "Quantitative",
+    children: [
+      { label: "RCT", children: [] },
+      { label: "Stepped Wedge", children: [] },
+      { label: "Difference-in-Differences (DiD)", children: [] },
+      { label: "Matching", children: [] },
+      { label: "Pre-Post / Before-After", children: [] },
+      { label: "Descriptive", children: [] }
+    ]
+  },
+  {
+    group: "Qualitative",
+    children: [
+      { label: "Longitudinal", children: [] }
+    ]
+  },
+  {
+    group: "Mixed Methods",
+    children: [
+      { label: "Mixed Methods", children: [] }
+    ]
+  }
+];
+
+// Services is one flat list — a project is tagged by its primary
+// commissioned deliverable, not every method touched along the way (survey
+// data collected as part of a larger evaluation doesn't also earn the
+// Survey tag; Survey is reserved for projects where the dataset itself is
+// the whole deliverable). Two genuinely separate deliverables (e.g. a
+// survey that also feeds a custom-built dashboard) get both tags. A small
+// number of pure program-design/delivery or incubation-management projects
+// don't fit any of these five and are left untagged here, same as the
+// Study Design exclusion above. "Monitoring only" nests under MLE (a
+// project can carry MLE alone, or MLE + Monitoring only) rather than
+// standing as its own top-level category; it's still reserved for future
+// third-party monitoring engagements — no current project fits it cleanly.
+const SERVICES_TREE = [
+  {
+    group: null,
+    children: [
+      { label: "MLE", children: ["Monitoring only"] },
+      { label: "Capacity Building", children: [] },
+      { label: "Survey", children: [] },
+      { label: "Software Development", children: [] }
+    ]
+  }
+];
+
+function showSkeleton() {
+  const grid = document.getElementById("cardGrid");
+  const empty = document.getElementById("emptyState");
+  empty.style.display = "none";
+  let html = "";
+  for (let i = 0; i < 6; i++) {
+    html += `
+      <div class="skeleton-card">
+        <div class="skeleton-line" style="width:40%"></div>
+        <div class="skeleton-line" style="width:80%"></div>
+        <div class="skeleton-line" style="width:95%"></div>
+        <div class="skeleton-line" style="width:90%"></div>
+        <div class="skeleton-line" style="width:60%"></div>
+      </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function showBanner(type, message) {
+  const banner = document.getElementById("dataBanner");
+  banner.className = "data-banner " + type;
+  banner.textContent = message;
+  banner.style.display = "block";
+}
+
+function hideBanner() {
+  document.getElementById("dataBanner").style.display = "none";
+}
+
+function initDashboard() {
+  buildFilterGroup("themeFilters", "theme", unique("theme"));
+  buildFilterGroup("subthemeFilters", "subtheme", unique("subtheme"));
+  buildFilterGroup("statusFilters", "status", unique("status"));
+  buildFilterGroup("locationFilters", "location", unique("location"));
+  buildTreeFilter("studyDesignFilters", "studyDesign", STUDY_DESIGN_TREE);
+  buildTreeFilter("servicesFilters", "services", SERVICES_TREE);
+  buildFilterGroup("verticalsFilters", "verticals", VERTICALS_OPTIONS);
+  render();
+  buildAboutModalContent();
+  handleRoute();
+}
+
+// ---------------------------------------------------------------------
+// Collapsible filter sections — lets people hide categories they don't
+// use often so the sidebar isn't overwhelming. State persists across
+// visits via localStorage (this is a real deployed site, not a sandboxed
+// preview, so localStorage is safe and appropriate here).
+// ---------------------------------------------------------------------
+const COLLAPSE_STORAGE_KEY = "cerpDashboardCollapsedFilters";
+
+function getCollapsedSet() {
+  try {
+    const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+function saveCollapsedSet(set) {
+  try {
+    localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify([...set]));
+  } catch (e) { /* ignore (e.g. private browsing) */ }
+}
+
+// Shared collapsible-heading mechanism for both the sidebar filters and the
+// About modal's accordion (see buildAboutModalContent/accordionSection).
+// `persist` uses localStorage (sidebar only, unchanged COLLAPSE_STORAGE_KEY
+// — the modal uses its own in-memory Set so the two never share state).
+// `singleOpen` auto-collapses every other section in the same container
+// when one opens (modal only — the sidebar's categories stay independently
+// multi-open, as before). Also adds the keyboard/ARIA support every
+// .filter-heading needs: role="button", tabindex, aria-expanded/-controls.
+function initCollapsible(containerSelector, { persist = false, singleOpen = false } = {}) {
+  const container = document.querySelector(containerSelector);
+  if (!container) return;
+
+  let collapsed = persist ? getCollapsedSet() : new Set();
+  const headings = [...container.querySelectorAll(".filter-heading")];
+  if (singleOpen && !persist) {
+    // Default: first section open, rest collapsed.
+    headings.slice(1).forEach(h => { if (h.dataset.target) collapsed.add(h.dataset.target); });
+  }
+
+  function apply() {
+    headings.forEach(heading => {
+      const targetId = heading.dataset.target;
+      const target = document.getElementById(targetId);
+      const isCollapsed = collapsed.has(targetId);
+      heading.classList.toggle("collapsed", isCollapsed);
+      heading.setAttribute("aria-expanded", String(!isCollapsed));
+      if (target) target.classList.toggle("collapsed", isCollapsed);
+    });
+  }
+
+  function toggle(heading) {
+    const targetId = heading.dataset.target;
+    if (!targetId) return;
+    if (collapsed.has(targetId)) {
+      collapsed.delete(targetId);
+      if (singleOpen) {
+        headings.forEach(h => {
+          const id = h.dataset.target;
+          if (id && id !== targetId) collapsed.add(id);
+        });
+      }
+    } else {
+      collapsed.add(targetId);
+    }
+    if (persist) saveCollapsedSet(collapsed);
+    apply();
+  }
+
+  headings.forEach(heading => {
+    heading.setAttribute("role", "button");
+    heading.setAttribute("tabindex", "0");
+    if (heading.dataset.target) heading.setAttribute("aria-controls", heading.dataset.target);
+    heading.addEventListener("click", () => toggle(heading));
+    heading.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        toggle(heading);
+      }
+    });
+  });
+
+  apply();
+}
+
+initCollapsible(".filters", { persist: true });
+initMatchModeSelect();
+injectGeneratedColorCSS();
+
+showSkeleton();
+showBanner("loading", "Loading the latest projects from the Google Sheet…");
+loadProjectsFromSheet(
+  (projects) => {
+    PROJECTS = projects;
+    try {
+      initDashboard();
+      hideBanner();
+    } catch (err) {
+      // The sheet loaded fine — this is a rendering bug, not a data
+      // problem, so say so plainly instead of blaming sheet-loader.js.
+      console.error(err);
+      showBanner("error", "The sheet loaded, but the dashboard hit a rendering error (" + err.message + "). This is a bug in index.html, not the data — check the browser console for details.");
+    }
+  },
+  (err) => {
+    showBanner("error", "Couldn't load live data (" + err.message + "). Showing nothing until this is fixed — check sheet-loader.js.");
+    PROJECTS = [];
+    document.getElementById("cardGrid").innerHTML = "";
+    document.getElementById("resultsNum").textContent = "0";
+    try { initDashboard(); } catch (err2) { console.error(err2); }
+  }
+);
+
+
+function pillClass(value) {
+  // Convert "Gender & Inclusion" -> "Gender---Inclusion", "Climate & Environment" -> "Climate---Environment", "Economic Opportunity" -> "Economic-Opportunity"
+  return value.replace(/ & /g, "---").replace(/ /g, "-");
+}
+
+function unique(field) {
+  const s = new Set();
+  PROJECTS.forEach(p => {
+    const v = p[field];
+    if (Array.isArray(v)) v.forEach(x => x && s.add(x));
+    else if (v) s.add(v);
+  });
+  return [...s].sort();
+}
+
+function countFor(field, value) {
+  return PROJECTS.filter(p => {
+    const v = p[field];
+    return Array.isArray(v) ? v.includes(value) : v === value;
+  }).length;
+}
+
+function buildFilterGroup(containerId, field, options) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  options.forEach(opt => {
+    const label = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = opt;
+    cb.dataset.field = field;
+    cb.addEventListener("change", () => {
+      if (cb.checked) state[field].add(opt);
+      else state[field].delete(opt);
+      render();
+    });
+    const span = document.createElement("span");
+    span.textContent = opt;
+    const count = document.createElement("span");
+    count.className = "badge-count";
+    count.textContent = countFor(field, opt);
+    label.appendChild(cb);
+    label.appendChild(span);
+    label.appendChild(count);
+    container.appendChild(label);
+  });
+}
+
+// The "Show projects matching [any/all] of the filters I've checked below"
+// select lives in static HTML (#matchModeSelect) from page load, so it's
+// wired once here rather than inside initDashboard() (which only runs
+// after data loads). Replaces the old pair of per-category OR/AND toggles
+// plus separate global ALL CATEGORIES/ANY TAG switch with one control that
+// applies the same rule everywhere at once.
+function initMatchModeSelect() {
+  const select = document.getElementById("matchModeSelect");
+  select.addEventListener("change", () => {
+    matchMode = select.value;
+    render();
+  });
+  updateMatchCaption();
+}
+
+// Plain-language readout of what matchMode currently does, shown right
+// under the select so the effect never has to be guessed at. Covers both
+// the search box's keywords and the filter checkboxes, since one switch
+// now drives both.
+function updateMatchCaption() {
+  const caption = document.getElementById("matchCaption");
+  if (!caption) return;
+  const hasSearch = parseSearchGroups(state.search).length > 0;
+  const hasFilters = anyFilterSelected();
+  if (!hasSearch && !hasFilters) {
+    caption.textContent = "Type a keyword or check a filter below to narrow the list.";
+    return;
+  }
+  caption.textContent = matchMode === "any"
+    ? "Showing projects matching at least one of your keywords or checked boxes."
+    : "Showing only projects matching every one of your keywords and checked boxes.";
+}
+
+
+// nested checkboxes. Only leaf values are real filter tags; group headers
+// are visual grouping only and don't filter anything themselves. A project
+// matches if it has ANY selected value in its array for that field.
+function buildTreeFilter(containerId, field, tree) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+
+  function makeCheckbox(value, indentLevel) {
+    const label = document.createElement("label");
+    label.className = "leaf" + (indentLevel > 0 ? " indent" : "");
+    if (indentLevel > 1) label.style.paddingLeft = (18 * indentLevel) + "px";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = value;
+    cb.dataset.field = field;
+    cb.checked = state[field].has(value);
+    cb.addEventListener("change", () => {
+      if (cb.checked) state[field].add(value);
+      else state[field].delete(value);
+      render();
+    });
+    const span = document.createElement("span");
+    span.textContent = value;
+    const count = document.createElement("span");
+    count.className = "badge-count";
+    count.textContent = countFor(field, value);
+    label.appendChild(cb);
+    label.appendChild(span);
+    label.appendChild(count);
+    return label;
+  }
+
+  tree.forEach(branch => {
+    const wrap = document.createElement("div");
+    wrap.className = "design-tree-group";
+    if (branch.group) {
+      const heading = document.createElement("div");
+      heading.className = "group-label";
+      heading.textContent = branch.group;
+      wrap.appendChild(heading);
+    }
+    branch.children.forEach(child => {
+      wrap.appendChild(makeCheckbox(child.label, branch.group ? 1 : 0));
+      (child.children || []).forEach(grandchild => {
+        wrap.appendChild(makeCheckbox(grandchild, 2));
+      });
+    });
+    container.appendChild(wrap);
+  });
+}
+
+// Splits the search box into keyword groups on commas/semicolons — each
+// group is itself split on whitespace into individual words. A group with
+// no comma/semicolon typed (the common case, e.g. "education RCT") comes
+// back as a single group containing both words, so it behaves exactly like
+// the old word-AND search below. Typing "education RCT, gender" produces
+// two groups instead: ["education","rct"] and ["gender"].
+function parseSearchGroups(raw) {
+  return raw
+    .split(/[,;]+/)
+    .map(group => group.trim().toLowerCase().split(/\s+/).filter(Boolean))
+    .filter(group => group.length);
+}
+
+function searchMatches(p) {
+  const groups = parseSearchGroups(state.search);
+  if (!groups.length) return true;
+  const hay = (p.name + " " + p.description + " " + p.partners + " " + p.subtheme.join(" ") + " " + p.theme.join(" ") + " " + p.location.join(" ")).toLowerCase();
+  // Within a group, every word must appear somewhere (AND across words) —
+  // so a group like "education RCT" matches projects that mention both
+  // words, rather than only that exact phrase. Across groups, the shared
+  // matchMode switch (same one the filter checkboxes use) decides whether
+  // ANY group needs to match or ALL of them do.
+  const groupMatches = (words) => words.every(w => hay.includes(w));
+  return matchMode === "all" ? groups.every(groupMatches) : groups.some(groupMatches);
+}
+
+// Whether any filter (any category, any value) is currently checked —
+// drives both the matchMode caption and the active-filter chips.
+function anyFilterSelected() {
+  if (state.status.size) return true;
+  return MULTI_FIELDS.some(field => state[field].size);
+}
+
+// matchMode === "any": true if the project carries at least one
+// currently-checked tag, in any category.
+function projectHasAnySelectedTag(p) {
+  if (state.status.size && state.status.has(p.status)) return true;
+  return MULTI_FIELDS.some(field => {
+    if (!state[field].size) return false;
+    const values = Array.isArray(p[field]) ? p[field] : [];
+    return values.some(v => state[field].has(v));
+  });
+}
+
+// matchMode === "all": true only if the project carries every
+// currently-checked tag, across every category.
+function projectHasEverySelectedTag(p) {
+  if (state.status.size && !state.status.has(p.status)) return false;
+  return MULTI_FIELDS.every(field => {
+    if (!state[field].size) return true;
+    const values = Array.isArray(p[field]) ? p[field] : [];
+    return [...state[field]].every(tag => values.includes(tag));
+  });
+}
+
+function matchesFilters(p) {
+  if (!searchMatches(p)) return false;
+  if (!anyFilterSelected()) return true;
+  return matchMode === "any" ? projectHasAnySelectedTag(p) : projectHasEverySelectedTag(p);
+}
+
+function cardHTML(p) {
+  const arr = (v) => Array.isArray(v) ? v : [];
+  const themePills = arr(p.theme).map(t => `<span class="card-area-pill pill-${pillClass(t)}">${t}</span>`).join("");
+  const subthemeTags = arr(p.subtheme).map(s => `<span class="subtheme-tag">${s}</span>`).join("");
+  const designTags = arr(p.studyDesign).map(s => `<span class="tag design">${s}</span>`).join("");
+  const servicesTags = arr(p.services).map(s => `<span class="tag services">${s}</span>`).join("");
+  const locationTags = arr(p.location).map(s => `<span class="tag location">${s}</span>`).join("");
+  const verticalPills = arr(p.verticals).map(s => `<span class="card-area-pill vpill-${pillClass(s)}">${s}</span>`).join("");
+  // The vertical (not the theme) sets the card's accent line now that the
+  // vertical pill has moved to the top of the card — first-listed vertical
+  // wins if a project carries more than one, same convention theme used before.
+  const accentColor = VERTICALS_COLORS[p.verticals[0]] ? VERTICALS_COLORS[p.verticals[0]].fg : "var(--border)";
+  return `
+    <div class="card" data-id="${p.id}" style="--accent: ${accentColor};">
+      <div class="card-top">
+        <div class="vertical-row">${verticalPills}</div>
+        <span class="status-pill status-${p.status}">${p.status}</span>
+      </div>
+      <h3>${p.name}</h3>
+      <div class="subtheme-row">${themePills}${subthemeTags}</div>
+      <p class="desc">${p.description}</p>
+      <div class="partners">${p.partners}</div>
+      <div class="tag-row">${locationTags}${designTags}${servicesTags}</div>
+      <div class="card-actions">
+        <a class="details-btn" href="#/project/${p.id}" data-id="${p.id}">View details &amp; resources</a>
+        <button class="copy-btn" data-id="${p.id}">Copy card text</button>
+      </div>
+    </div>
+  `;
+}
+
+// Field labels for active-filter chips (Status is separate from
+// MULTI_FIELDS since it's a single value, not an array).
+const CHIP_FIELD_LABELS = {
+  status: "Status",
+  theme: "Theme",
+  subtheme: "Sub-theme",
+  location: "Location",
+  studyDesign: "Study Design",
+  services: "Services",
+  verticals: "Verticals"
+};
+
+function removeFilterValue(field, value) {
+  const cb = document.querySelector(`input[type="checkbox"][data-field="${field}"][value="${CSS.escape(value)}"]`);
+  if (cb) cb.checked = false;
+  state[field].delete(value);
+  render();
+}
+
+function renderActiveFilterChips() {
+  const container = document.getElementById("activeFilters");
+  if (!anyFilterSelected()) {
+    container.innerHTML = "";
+    return;
+  }
+  const chips = [];
+  state.status.forEach(v => chips.push({ field: "status", value: v }));
+  MULTI_FIELDS.forEach(field => {
+    state[field].forEach(v => chips.push({ field, value: v }));
+  });
+  container.innerHTML = chips.map(({ field, value }) => `
+    <span class="active-filter-chip">
+      ${value}
+      <button type="button" class="chip-remove" data-field="${field}" data-value="${value.replace(/"/g, "&quot;")}" aria-label="Remove ${CHIP_FIELD_LABELS[field] || field}: ${value} filter">&times;</button>
+    </span>
+  `).join("");
+
+  container.querySelectorAll(".chip-remove").forEach(btn => {
+    btn.addEventListener("click", () => removeFilterValue(btn.dataset.field, btn.dataset.value));
+  });
+}
+
+function render() {
+  const filtered = PROJECTS.filter(matchesFilters);
+  lastFiltered = filtered;
+  const grid = document.getElementById("cardGrid");
+  const empty = document.getElementById("emptyState");
+  document.getElementById("resultsNum").textContent = filtered.length;
+  document.getElementById("headerCount").textContent = `${PROJECTS.length} total projects`;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = "";
+    empty.style.display = "block";
+  } else {
+    empty.style.display = "none";
+    grid.innerHTML = filtered.map(cardHTML).join("");
+  }
+
+  renderActiveFilterChips();
+  updateMatchCaption();
+
+  document.querySelectorAll(".copy-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const p = PROJECTS.find(x => x.id === btn.dataset.id);
+      const lines = [
+        p.name,
+        p.partners,
+        "",
+        p.description,
+        "",
+        `Theme: ${p.theme.join(", ") || "—"}`,
+        `Sub-theme: ${p.subtheme.join(", ") || "—"}`,
+        `Status: ${p.status || "—"}`,
+        `Location: ${p.location.join(", ") || "—"}`,
+        `Study Design: ${p.studyDesign.join(", ") || "—"}`,
+        `Services: ${p.services.join(", ") || "—"}`,
+        `Verticals: ${p.verticals.join(", ") || "—"}`
+      ];
+      const text = lines.join("\n");
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = "Copied";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.textContent = "Copy card text"; btn.classList.remove("copied"); }, 1400);
+      });
+    });
+  });
+
+  document.querySelectorAll(".details-btn").forEach(btn => {
+    btn.addEventListener("click", (e) => e.stopPropagation());
+  });
+
+  document.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("a, button")) return; // the real control handles its own click + stopPropagation
+      const link = card.querySelector(".details-btn");
+      if (link) link.click();
+    });
+  });
+}
+
+let searchDebounceTimer = null;
+document.getElementById("searchBox").addEventListener("input", (e) => {
+  state.search = e.target.value;
+  clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(render, 150);
+});
+
+document.getElementById("clearBtn").addEventListener("click", () => {
+  state.search = "";
+  document.getElementById("searchBox").value = "";
+  FILTER_FIELDS.forEach(f => state[f].clear());
+  matchMode = "any";
+  document.getElementById("matchModeSelect").value = "any";
+  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+  render();
+});
+
+// =====================================================================
+// Export filtered results as a table, copied to the clipboard as real
+// HTML (so pasting into Word or Google Docs produces an actual table,
+// not a wall of text) with a plain-text fallback for anywhere that
+// doesn't accept rich content.
+// =====================================================================
+function buildExportTable(projects) {
+  const esc = (s) => String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // Group projects by primary theme, then primary subtheme within it, so
+  // the export reads as an organized report instead of a flat tag-soup
+  // list. "Primary" = first listed value — a project can carry more than
+  // one theme/subtheme, but the export needs one home per project.
+  const groups = new Map(); // theme -> Map(subtheme -> projects[])
+  projects.forEach(p => {
+    const theme = p.theme[0] || "(No theme)";
+    const subtheme = p.subtheme[0] || "(No sub-theme)";
+    if (!groups.has(theme)) groups.set(theme, new Map());
+    const subMap = groups.get(theme);
+    if (!subMap.has(subtheme)) subMap.set(subtheme, []);
+    subMap.get(subtheme).push(p);
+  });
+
+  // A single connected table throughout — no nested inner tables. Word and
+  // Google Docs paste real shared table rows reliably (borders stay joined,
+  // and both columns in a row are forced to the same height by the table
+  // layout itself), but two independent tables sitting side by side paste
+  // as disconnected floating boxes with mismatched heights. Every border
+  // is set inline per-cell (not a legacy <table border> attribute, which
+  // renders black and can override the grey specified in CSS).
+  const cellBorder = "border:1px solid #cccccc;";
+
+  // Only "Ongoing" gets a marker — Completed is the unremarkable default
+  // outcome and doesn't need a badge. Plain outline, no fill color: this
+  // is a status flag, not another tag to color-code.
+  const ongoingBadge = `<span style="display:inline-block;font-size:10.5px;font-weight:600;padding:2px 8px;` +
+    `border-radius:4px;background:#ffffff;color:#333333;border:1px solid #333333;white-space:nowrap;">Ongoing</span>`;
+
+  const projectHeaderCell = (p) => {
+    return `<td style="width:50%;vertical-align:top;padding:8px 10px;${cellBorder}">
+      <div style="font-weight:700;color:#00547f;font-size:13px;margin-bottom:2px;">${esc(p.name)}</div>
+      <div style="color:#5d6b78;font-style:italic;font-size:11.5px;">${esc(p.partners)}</div>
+      ${p.status === "Ongoing" ? `<div style="margin-top:6px;">${ongoingBadge}</div>` : ""}
+    </td>`;
+  };
+  const projectDescCell = (p) =>
+    `<td style="width:50%;vertical-align:top;padding:8px 10px;font-size:12px;line-height:1.5;${cellBorder}">${esc(p.description)}</td>`;
+  const emptyCell = () => `<td style="width:50%;${cellBorder}"></td>`;
+
+  // Theme bar: darker navy. Sub-theme bar: same navy family, one step
+  // lighter — a consistent two-level hierarchy, not tied to per-theme
+  // pill colors (which span the whole palette and wouldn't read as a
+  // hierarchy at all).
+  const THEME_BAR = "#00344d";
+  const SUBTHEME_BAR = "#1f6690";
+  const groupHeaderRow = (label, bg) =>
+    `<tr><td colspan="2" style="background:${bg};color:#ffffff;font-weight:700;padding:8px 12px;font-size:13px;border:1px solid ${bg};">${esc(label)}</td></tr>`;
+
+  let html = `<table style="width:100%;min-width:960px;border-collapse:collapse;table-layout:fixed;font-family:'Times New Roman',Times,serif;">`;
+  [...groups.keys()].sort().forEach(theme => {
+    html += groupHeaderRow(theme, THEME_BAR);
+    const subMap = groups.get(theme);
+    [...subMap.keys()].sort().forEach(subtheme => {
+      html += groupHeaderRow(subtheme, SUBTHEME_BAR);
+      const list = subMap.get(subtheme);
+      for (let i = 0; i < list.length; i += 2) {
+        const a = list[i];
+        const b = list[i + 1];
+        html += `<tr>${projectHeaderCell(a)}${b ? projectHeaderCell(b) : emptyCell()}</tr>`;
+        html += `<tr>${projectDescCell(a)}${b ? projectDescCell(b) : emptyCell()}</tr>`;
+      }
+    });
+  });
+  html += `</table>`;
+
+  // Plain-text fallback: one line per project. Grouping doesn't translate
+  // to plain text, so Theme/Sub-theme travel as their own columns instead.
+  const headers = ["Theme", "Sub-theme", "Project Name", "Status", "Location", "Partners / Funders", "Description"];
+  const rows = projects.map(p => [
+    p.theme.join(", "), p.subtheme.join(", "), p.name, p.status, p.location.join(", "), p.partners, p.description
+  ]);
+  const text = [headers.join("\t"), ...rows.map(r => r.map(c => String(c || "").replace(/\t/g, " ")).join("\t"))].join("\n");
+
+  return { html, text };
+}
+
+document.getElementById("exportBtn").addEventListener("click", async () => {
+  const btn = document.getElementById("exportBtn");
+  const { html, text } = buildExportTable(lastFiltered);
+
+  try {
+    if (window.ClipboardItem) {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([text], { type: "text/plain" })
+      });
+      await navigator.clipboard.write([item]);
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+    btn.textContent = `Copied ${lastFiltered.length} project${lastFiltered.length === 1 ? "" : "s"} as a table`;
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = "Export results to table";
+      btn.classList.remove("copied");
+    }, 2200);
+  } catch (err) {
+    // Clipboard write blocked (permissions, insecure context, etc.) —
+    // fall back to downloading a standalone HTML file with the table,
+    // which opens cleanly in Word/Docs via "Open" or copy-paste.
+    const blob = new Blob([`<html><head><meta charset="utf-8"></head><body>${html}</body></html>`], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cerp-projects-export.html";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    btn.textContent = "Downloaded as file instead";
+    setTimeout(() => { btn.textContent = "Export results to table"; }, 2200);
+  }
+});
+
+// =====================================================================
+// Project detail page (hash-routed: #/project/<id>)
+// =====================================================================
+// Each project card links to #/project/<id>. We intercept the hash
+// instead of loading a real second HTML page, since the dashboard is a
+// single static file fed by the Google Sheet — this keeps everything
+// in one file while still giving each project its own bookmarkable,
+// shareable URL and back button behavior.
+
+const RESOURCE_ICONS = {
+  pdf: "📄",
+  doc: "📝",
+  data: "📊",
+  link: "🔗"
+};
+
+function resourceItemHTML(r) {
+  const icon = RESOURCE_ICONS[r.type] || RESOURCE_ICONS.link;
+  const label = r.label || r.url;
+  return `
+    <a class="resource-item" href="${r.url}" target="_blank" rel="noopener noreferrer">
+      <span class="resource-icon">${icon}</span>
+      <span class="resource-label">${label}</span>
+    </a>`;
+}
+
+function detailPageHTML(p) {
+  const arr = (v) => Array.isArray(v) ? v : [];
+  const themePills = arr(p.theme).map(t => `<span class="card-area-pill pill-${pillClass(t)}">${t}</span>`).join("");
+  const subthemeTags = arr(p.subtheme).map(s => `<span class="subtheme-tag">${s}</span>`).join("");
+  const designTags = arr(p.studyDesign).map(s => `<span class="tag design">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+  const servicesTags = arr(p.services).map(s => `<span class="tag services">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+  const verticalsTags = arr(p.verticals).map(s => `<span class="tag vertical">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+  const locationTags = arr(p.location).map(s => `<span class="tag location">${s}</span>`).join("") || `<span class="tag">Not tagged</span>`;
+
+  const resourcesHTML = (p.resources && p.resources.length)
+    ? `<div class="resource-list">${p.resources.map(resourceItemHTML).join("")}</div>`
+    : `<div class="resource-empty">
+        No resources added yet. To add reports, decks, or links for this project,
+        open <code>sheet-loader.js</code>, find <code>PROJECT_RESOURCES["${p.id}"]</code>,
+        and add an entry like:<br><br>
+        <code>{ label: "Endline report (PDF)", url: "https://...", type: "pdf" }</code>
+      </div>`;
+
+  return `
+    <button class="back-link" id="backToListBtn">&larr; Back to all projects</button>
+    <div class="detail-card">
+      <div class="detail-head-row">
+        <div class="theme-row">${themePills}</div>
+        <span class="status-pill status-${p.status}">${p.status}</span>
+      </div>
+      <h1>${p.name}</h1>
+      <div class="subtheme-row">${subthemeTags}</div>
+      <div class="partners">${p.partners}</div>
+
+      <div class="detail-section">
+        <h2>Overview</h2>
+        <p>${p.description}</p>
+      </div>
+
+      <div class="detail-section">
+        <h2>Location</h2>
+        <div class="detail-tag-block">${locationTags}</div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Study Design</h2>
+        <div class="detail-tag-block">${designTags}</div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Services</h2>
+        <div class="detail-tag-block">${servicesTags}</div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Verticals</h2>
+        <div class="detail-tag-block">${verticalsTags}</div>
+      </div>
+
+      <div class="detail-section">
+        <h2>Resources</h2>
+        ${resourcesHTML}
+      </div>
+    </div>
+  `;
+}
+
+function showDetailPage(id) {
+  const p = PROJECTS.find(x => x.id === id);
+  const detailPage = document.getElementById("detailPage");
+  const listLayout = document.getElementById("listLayout");
+
+  if (!p) {
+    detailPage.innerHTML = `
+      <button class="back-link" id="backToListBtn">&larr; Back to all projects</button>
+      <div class="detail-card"><p>That project couldn't be found — it may have been renamed or removed from the sheet.</p></div>`;
+  } else {
+    detailPage.innerHTML = detailPageHTML(p);
+  }
+
+  listLayout.style.display = "none";
+  detailPage.style.display = "block";
+  document.getElementById("backToListBtn").addEventListener("click", () => {
+    window.location.hash = "";
+  });
+  window.scrollTo(0, 0);
+}
+
+function showListPage() {
+  document.getElementById("detailPage").style.display = "none";
+  document.getElementById("listLayout").style.display = "";
+}
+
+function handleRoute() {
+  const hash = window.location.hash; // e.g. "#/project/edu-leaps"
+  const match = hash.match(/^#\/project\/(.+)$/);
+  if (match) {
+    showDetailPage(decodeURIComponent(match[1]));
+  } else {
+    showListPage();
+  }
+}
+
+window.addEventListener("hashchange", handleRoute);
+
+</script>
+
+
+</body>
+</html>
